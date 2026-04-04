@@ -52,6 +52,18 @@ export class DialogueSystem {
     this.complete();
   }
 
+  retreat(): void {
+    if (!this.state.visible || this.state.index <= 0) {
+      return;
+    }
+
+    this.state = {
+      ...this.state,
+      index: this.state.index - 1,
+    };
+    this.onChange(this.state);
+  }
+
   skip(): void {
     if (!this.state.visible || !this.state.canSkip) {
       return;

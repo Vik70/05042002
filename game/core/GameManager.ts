@@ -314,6 +314,10 @@ export class GameManager {
     this.dialogueSystem.advance();
   }
 
+  retreatDialogue(): void {
+    this.dialogueSystem.retreat();
+  }
+
   skipDialogue(): void {
     this.dialogueSystem.skip();
   }

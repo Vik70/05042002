@@ -33,6 +33,7 @@ export function SimbaDialoguePanel({
   const line = lines[lineIndex] ?? lines[0];
   const isComplete = visibleChars >= line.text.length;
   const isFinalLine = lineIndex >= lines.length - 1;
+  const hasPrevious = lineIndex > 0;
 
   useEffect(() => {
     setLineIndex(0);
@@ -68,9 +69,23 @@ export function SimbaDialoguePanel({
     }
   }, [isComplete, isFinalLine, line.text.length]);
 
+  const handleRetreat = useCallback(() => {
+    if (!hasPrevious) {
+      return;
+    }
+
+    setLineIndex((current) => Math.max(0, current - 1));
+  }, [hasPrevious]);
+
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.code === "Space" || event.code === "Enter") {
+      if (event.code === "ArrowLeft") {
+        event.preventDefault();
+        handleRetreat();
+        return;
+      }
+
+      if (event.code === "ArrowRight" || event.code === "Space" || event.code === "Enter") {
         event.preventDefault();
         if (isFinalLine && isComplete) {
           onContinue();
@@ -85,12 +100,12 @@ export function SimbaDialoguePanel({
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [handleAdvance, isComplete, isFinalLine, onContinue]);
+  }, [handleAdvance, handleRetreat, isComplete, isFinalLine, onContinue]);
 
   return (
-    <div className="absolute inset-0 flex items-end justify-center p-3 pb-safe md:p-6">
+    <div className="absolute inset-0 z-50 flex items-end justify-center p-3 pb-safe md:p-6">
       <div
-        className="moonlit-frame w-full max-w-full rounded-[30px] border px-4 py-4 shadow-[0_34px_110px_rgba(0,0,0,0.48)] md:max-w-5xl md:px-7 md:py-6"
+        className="moonlit-frame max-h-[calc(100%-1.5rem)] w-full max-w-full overflow-y-auto rounded-[30px] border px-4 py-4 shadow-[0_34px_110px_rgba(0,0,0,0.48)] md:max-w-5xl md:px-7 md:py-6"
         style={{ borderColor: `${accentColor}44` }}
       >
         <div className="flex flex-col gap-5 md:flex-row">
@@ -135,21 +150,55 @@ export function SimbaDialoguePanel({
 
                 <div className="mt-5 flex flex-col gap-3 md:flex-row md:items-center md:justify-between md:gap-4">
                   <p className="text-sm text-paper-cream/56">
-                    {isTouchDevice ? "Tap the button below to continue." : "Press Space or Enter, or use the button below."}
+                    {isTouchDevice
+                      ? "Use the arrows or the button below."
+                      : "Use the arrows, Enter, or the button below."}
                   </p>
-                  <button
-                    type="button"
-                    onClick={onContinue}
-                    className="w-full rounded-full border border-lantern-gold/60 bg-lantern-gold px-6 py-3 font-semibold text-text-ink transition hover:scale-[1.02] sm:w-auto"
-                  >
-                    {result.ctaLabel}
-                  </button>
+                  <div className="flex w-full items-center justify-end gap-2 sm:w-auto">
+                    <button
+                      type="button"
+                      aria-label="Previous reflection line"
+                      onClick={handleRetreat}
+                      disabled={!hasPrevious}
+                      className="h-9 w-9 rounded-full border border-paper-cream/15 text-sm text-paper-cream/80 transition hover:border-paper-cream/35 hover:bg-white/6 disabled:cursor-not-allowed disabled:opacity-35"
+                    >
+                      &lt;
+                    </button>
+                    <button
+                      type="button"
+                      onClick={onContinue}
+                      className="w-full rounded-full border border-lantern-gold/60 bg-lantern-gold px-6 py-3 font-semibold text-text-ink transition hover:scale-[1.02] sm:w-auto"
+                    >
+                      {result.ctaLabel}
+                    </button>
+                  </div>
                 </div>
               </>
             ) : (
-              <p className="mt-5 text-sm text-paper-cream/56">
-                {isTouchDevice ? "Tap to continue with Simba." : "Click, Space, or Enter to continue with Simba."}
-              </p>
+              <div className="mt-5 flex flex-col gap-3 md:flex-row md:items-center md:justify-between md:gap-4">
+                <p className="text-sm text-paper-cream/56">
+                  {isTouchDevice ? "Tap the text or use the arrows." : "Click the text or use the arrow keys."}
+                </p>
+                <div className="flex items-center justify-end gap-2">
+                  <button
+                    type="button"
+                    aria-label="Previous reflection line"
+                    onClick={handleRetreat}
+                    disabled={!hasPrevious}
+                    className="h-9 w-9 rounded-full border border-paper-cream/15 text-sm text-paper-cream/80 transition hover:border-paper-cream/35 hover:bg-white/6 disabled:cursor-not-allowed disabled:opacity-35"
+                  >
+                    &lt;
+                  </button>
+                  <button
+                    type="button"
+                    aria-label="Next reflection line"
+                    onClick={handleAdvance}
+                    className="h-9 w-9 rounded-full border border-paper-cream/15 text-sm text-paper-cream/80 transition hover:border-paper-cream/35 hover:bg-white/6"
+                  >
+                    &gt;
+                  </button>
+                </div>
+              </div>
             )}
           </div>
         </div>

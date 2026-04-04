@@ -21,7 +21,7 @@ export function isPortraitViewport(): boolean {
 }
 
 export function useIsTouchDevice(): boolean {
-  const [touchDevice, setTouchDevice] = useState(false);
+  const [touchDevice, setTouchDevice] = useState(() => isTouchDevice());
 
   useEffect(() => {
     const updateTouchDevice = () => {
@@ -44,7 +44,7 @@ export function useIsTouchDevice(): boolean {
 }
 
 export function useIsPortraitViewport(): boolean {
-  const [portraitViewport, setPortraitViewport] = useState(false);
+  const [portraitViewport, setPortraitViewport] = useState(() => isPortraitViewport());
 
   useEffect(() => {
     const updatePortraitViewport = () => {

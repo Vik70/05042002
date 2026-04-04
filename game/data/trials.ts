@@ -48,7 +48,7 @@ export const TRIAL_DEFINITIONS: Record<TrialDefinition["id"], TrialDefinition> =
     controlsHint:
       "Click or press Space when a moon charm reaches the ring. Hold through elongated charms.",
     controlsHintTouch:
-      "Tap when a moon charm reaches the ring. Press and hold through elongated charms.",
+      "Tap when a moon charm reaches the ring. Touch and hold through elongated charms.",
     instructions: [
       "Tap when a moon charm reaches the glowing ring.",
       "Hold when an elongated charm crosses the ring and release when it passes through.",
@@ -106,7 +106,7 @@ export const TRIAL_DEFINITIONS: Record<TrialDefinition["id"], TrialDefinition> =
     controlsHint:
       "Click or press Space when a note reaches the center ring. Hold through sustained notes.",
     controlsHintTouch:
-      "Tap when a note reaches the center ring. Press and hold through sustained notes.",
+      "Tap when a note reaches the center ring. Touch and hold through sustained notes.",
     instructions: [
       "Answer each note as it reaches the center ring.",
       "Hold sustained notes all the way through their glowing path.",

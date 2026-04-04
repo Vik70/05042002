@@ -26,6 +26,7 @@ export function GameExperience() {
   const shouldLockCanvasTouchRef = useRef(false);
   const [manager, setManager] = useState<GameManager | null>(null);
   const [uiState, setUiState] = useState<UIState | null>(null);
+  const [showObjectiveBanner, setShowObjectiveBanner] = useState(true);
   const [topChromeHeight, setTopChromeHeight] = useState(0);
   const [showLandscapeHint, setShowLandscapeHint] = useState(false);
   const [viewportHeight, setViewportHeight] = useState(0);
@@ -124,10 +125,37 @@ export function GameExperience() {
     shouldLockCanvasTouch &&
     viewportHeight > 0 &&
     viewportHeight <= 500;
+  const guidanceFingerprint =
+    uiState && uiState.guidance.visible
+      ? [
+          uiState.sceneId,
+          uiState.guidance.objectiveTitle,
+          uiState.guidance.objectiveText,
+          uiState.guidance.simbaPrompt,
+          uiState.guidance.controlsHint,
+        ].join("|")
+      : "";
+  const objectiveBannerVisible = !shouldLockCanvasTouch || showObjectiveBanner;
 
   useEffect(() => {
     shouldLockCanvasTouchRef.current = shouldLockCanvasTouch;
   }, [shouldLockCanvasTouch]);
+
+  useEffect(() => {
+    if (!uiState?.guidance.visible || !shouldLockCanvasTouch) {
+      setShowObjectiveBanner(true);
+      return;
+    }
+
+    setShowObjectiveBanner(true);
+    const timeout = window.setTimeout(() => {
+      setShowObjectiveBanner(false);
+    }, 3500);
+
+    return () => {
+      window.clearTimeout(timeout);
+    };
+  }, [guidanceFingerprint, shouldLockCanvasTouch, uiState?.guidance.visible]);
 
   useEffect(() => {
     if (!isTouchDevice || !isPortraitViewport || !shouldLockCanvasTouch) {
@@ -197,19 +225,27 @@ export function GameExperience() {
           ) : (
             <>
               <SceneFade fade={uiState.fade} />
-              {!showCompactLandscapeLayout ? (
+              {showCompactLandscapeLayout ? (
+                <ObjectiveBanner
+                  guidance={uiState.guidance}
+                  topOffsetPx={topChromeHeight}
+                  stackBelowTopBar
+                  visible={objectiveBannerVisible}
+                />
+              ) : (
                 <>
                   <ObjectiveBanner
                     guidance={uiState.guidance}
                     portraitLayout={showPortraitGameplayLayout}
                     topOffsetPx={topChromeHeight}
+                    visible={objectiveBannerVisible}
                   />
                   <TutorialPrompt
                     guidance={uiState.guidance}
                     portraitLayout={showPortraitGameplayLayout}
                   />
                 </>
-              ) : null}
+              )}
 
               {showLandscapeHint ? (
                 <div
@@ -241,9 +277,8 @@ export function GameExperience() {
                   line={uiState.dialogue.lines[uiState.dialogue.index]}
                   index={uiState.dialogue.index}
                   total={uiState.dialogue.lines.length}
-                  canSkip={uiState.dialogue.canSkip}
+                  onRetreat={() => manager.retreatDialogue()}
                   onAdvance={() => manager.advanceDialogue()}
-                  onSkip={() => manager.skipDialogue()}
                 />
               ) : null}
 

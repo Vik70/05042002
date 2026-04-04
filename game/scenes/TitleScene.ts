@@ -12,7 +12,7 @@ export class TitleScene extends BaseScene {
     const petals = EffectsSystem.createPetalField(1440, 810, 20);
     const heading = this.createSceneHeading(
       "Aanavee",
-      "The Seven Gifts",
+      "The Four Gifts",
     );
 
     const shrine = new Graphics();

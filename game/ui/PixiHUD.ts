@@ -86,13 +86,17 @@ export class PixiHUD extends Container {
     const bounds = this.getVisibleBounds();
     const visibleWidth = bounds.right - bounds.left;
     const compactMobile = this.mobile && visibleWidth < GAME_WIDTH - 120;
-    const panelX = compactMobile ? bounds.left + 12 : 20;
-    const panelWidth = compactMobile ? visibleWidth - 24 : GAME_WIDTH - 40;
+    const panelX = this.mobile ? bounds.left + (compactMobile ? 12 : 20) : 20;
+    const panelWidth = this.mobile ? visibleWidth - (compactMobile ? 24 : 40) : GAME_WIDTH - 40;
     const panelHeight = compactMobile ? 126 : this.mobile ? 148 : 128;
     const bodyFontSize = compactMobile ? 18 : this.mobile ? 26 : 22;
     const headingFontSize = compactMobile ? 30 : this.mobile ? 40 : 34;
     const leftColumnX = panelX + (compactMobile ? 18 : 22);
-    const rightColumnX = compactMobile ? panelX + panelWidth - 250 : this.mobile ? GAME_WIDTH - 382 : GAME_WIDTH - 322;
+    const rightColumnX = compactMobile
+      ? panelX + panelWidth - 250
+      : this.mobile
+        ? panelX + panelWidth - 320
+        : GAME_WIDTH - 322;
     const textColumnWidth = Math.max(320, rightColumnX - leftColumnX - (compactMobile ? 28 : 40));
     const panelRadius = compactMobile ? 20 : 24;
 

@@ -1,4 +1,4 @@
-import { Container, Graphics, Text, TextStyle } from "pixi.js";
+import { Container, Graphics, Rectangle, Text, TextStyle } from "pixi.js";
 import { GIFT_REVEALS } from "@/game/data/dialogue";
 import {
   INGREDIENTS,
@@ -37,7 +37,42 @@ interface IngredientChoice {
   node: Container;
 }
 
+interface ApothecaryLayout {
+  recipeX: number;
+  recipeY: number;
+  recipeWidth: number;
+  recipeHeight: number;
+  recipeTextX: number;
+  recipeTitleY: number;
+  recipeDetailY: number;
+  recipeTextWidth: number;
+  timerX: number;
+  timerY: number;
+  timerWidth: number;
+  ingredientX: number;
+  ingredientY: number;
+  ingredientColumns: number;
+  ingredientGapX: number;
+  ingredientGapY: number;
+  buttonY: number;
+  clearButtonX: number;
+  confirmButtonX: number;
+  selectedX: number;
+  selectedY: number;
+  selectedWidth: number;
+  tableY: number;
+  shelfX: number;
+  shelfY: number;
+  shelfWidth: number;
+  shelfHeight: number;
+  bowlX: number;
+  bowlY: number;
+  bowlRadius: number;
+  bowlGlowRadius: number;
+}
+
 type ApothecaryPhase = "briefing" | "demo" | "ready" | "live";
+type RecipePhase = "memorize" | "recall";
 
 const APOTHECARY_DEMO_TIME = 18;
 const APOTHECARY_DEMO_RECIPE_ID = "moonpetal-salve";
@@ -49,12 +84,15 @@ export class ApothecaryScene extends BaseScene {
   private readonly scoreSystem = new ScoreSystem("apothecary");
   private readonly hud = new PixiHUD(() => this.game.getVisibleBounds());
   private readonly petals = EffectsSystem.createPetalField(1440, 810, 24, 0xf8b4c8);
+  private readonly workbench = new Container();
   private readonly recipePaper = new Graphics();
   private readonly recipeTitleText = new Text({ text: "", style: recipeStyle });
   private readonly recipeDetailText = new Text({ text: "", style: bodyStyle });
   private readonly selectedText = new Text({ text: "", style: bodyStyle });
   private readonly timerBar = new Graphics();
   private readonly ingredientLayer = new Container();
+  private confirmButton!: PixiButton;
+  private clearButton!: PixiButton;
 
   private recipeQueue: RecipeDefinition[] = [];
   private currentRecipeIndex = 0;
@@ -62,45 +100,64 @@ export class ApothecaryScene extends BaseScene {
   private availableIngredientIds: IngredientId[] = [];
   private selectedIngredients: IngredientId[] = [];
   private ingredientChoices: IngredientChoice[] = [];
+  private currentLayout: ApothecaryLayout | null = null;
+  private layoutKey = "";
   private recipeTimer = 0;
+  private recipeRecallTime = 0;
+  private recipeMemorizeTime = 0;
+  private memorizeTimeRemaining = 0;
   private streak = 0;
   private maxStreak = 0;
   private correctCount = 0;
   private mistakes = 0;
   private ended = false;
   private phaseState: ApothecaryPhase = "briefing";
+  private recipePhase: RecipePhase = "memorize";
   private status = "The old remedies are waiting for the memory Aanavee already carries.";
 
   private getControlsHint(): string {
     return getTrialControlsHint(this.trial, this.game.isMobile());
   }
 
+  private isCompactMobileLayout(): boolean {
+    const bounds = this.game.getVisibleBounds();
+    return this.game.isMobile() && bounds.right - bounds.left <= 900;
+  }
+
   private getIngredientCardWidth(): number {
-    return this.game.isMobile() ? 172 : 148;
+    return this.isCompactMobileLayout() ? 150 : this.game.isMobile() ? 172 : 148;
   }
 
   private getIngredientCardHeight(): number {
-    return this.game.isMobile() ? 108 : 92;
+    return this.isCompactMobileLayout() ? 90 : this.game.isMobile() ? 108 : 92;
   }
 
   private getIngredientLabelFontSize(): number {
-    return this.game.isMobile() ? 22 : 18;
+    return this.isCompactMobileLayout() ? 18 : this.game.isMobile() ? 22 : 18;
   }
 
   private getIngredientGridXStep(): number {
-    return this.game.isMobile() ? 182 : 174;
+    return this.isCompactMobileLayout()
+      ? this.getIngredientCardWidth() + 16
+      : this.game.isMobile()
+        ? 182
+        : 174;
   }
 
   private getIngredientGridYStep(): number {
-    return this.game.isMobile() ? 128 : 118;
+    return this.isCompactMobileLayout()
+      ? this.getIngredientCardHeight() + 14
+      : this.game.isMobile()
+        ? 128
+        : 118;
   }
 
   private getActionButtonHeight(): number {
-    return this.game.isMobile() ? 64 : 56;
+    return this.isCompactMobileLayout() ? 58 : this.game.isMobile() ? 64 : 56;
   }
 
   private getTimerBarHeight(): number {
-    return this.game.isMobile() ? 24 : 18;
+    return this.isCompactMobileLayout() ? 20 : this.game.isMobile() ? 24 : 18;
   }
 
   async init(): Promise<void> {
@@ -112,45 +169,39 @@ export class ApothecaryScene extends BaseScene {
     this.availableIngredientIds = [];
     this.selectedIngredients = [];
     this.ingredientChoices = [];
+    this.currentLayout = null;
+    this.layoutKey = "";
     this.recipeTimer = 0;
+    this.recipeRecallTime = 0;
+    this.recipeMemorizeTime = 0;
+    this.memorizeTimeRemaining = 0;
     this.streak = 0;
     this.maxStreak = 0;
     this.correctCount = 0;
     this.mistakes = 0;
     this.ended = false;
     this.phaseState = "briefing";
+    this.recipePhase = "memorize";
     this.status = "The old remedies are waiting for the memory Aanavee already carries.";
     this.hud.setMobile(this.game.isMobile());
 
     const actionButtonHeight = this.getActionButtonHeight();
 
     const backdrop = this.createNightBackdrop(0.26);
-    const apothecary = this.createWorkbench();
-    const confirmButton = new PixiButton({
+    this.confirmButton = new PixiButton({
       label: "Restore Remedy",
       width: 190,
       height: actionButtonHeight,
       tint: 0x7c5cbf,
       onClick: () => this.confirmRecipe(),
     });
-    confirmButton.position.set(1080, this.game.isMobile() ? 668 : 674);
-
-    const clearButton = new PixiButton({
+    this.clearButton = new PixiButton({
       label: "Clear Bowl",
       width: 150,
       height: actionButtonHeight,
       tint: 0xc0392b,
       onClick: () => this.clearSelection(),
     });
-    clearButton.position.set(906, this.game.isMobile() ? 668 : 674);
-
-    this.recipePaper.clear();
-    this.recipePaper.roundRect(70, 166, 600, 260, 24).fill({ color: 0xf5efe0, alpha: 0.95 });
-    this.recipePaper.roundRect(70, 166, 600, 260, 24).stroke({ color: 0xd9cba6, width: 2, alpha: 0.85 });
-
-    this.recipeTitleText.position.set(112, 208);
-    this.recipeDetailText.position.set(112, 264);
-    this.selectedText.position.set(112, 590);
     this.selectedText.style = new TextStyle({
       ...bodyStyle,
       fill: 0xf5efe0,
@@ -159,7 +210,7 @@ export class ApothecaryScene extends BaseScene {
 
     this.addChild(
       backdrop,
-      apothecary,
+      this.workbench,
       this.recipePaper,
       this.recipeTitleText,
       this.recipeDetailText,
@@ -167,8 +218,8 @@ export class ApothecaryScene extends BaseScene {
       this.selectedText,
       this.timerBar,
       this.petals.container,
-      confirmButton,
-      clearButton,
+      this.confirmButton,
+      this.clearButton,
       this.hud,
     );
 
@@ -180,6 +231,8 @@ export class ApothecaryScene extends BaseScene {
       "Simba will walk Aanavee through one easy memory fragment before the live remedies begin.";
     this.selectedText.text = "Restoration Bowl: Empty";
     this.timerBar.clear();
+    this.layoutScene(true);
+    this.syncInteractionState();
     this.refreshHud();
   }
 
@@ -217,11 +270,11 @@ export class ApothecaryScene extends BaseScene {
     this.loadDemoRecipe();
     this.game.showGuidance({
       objectiveTitle: `${this.trial.title} Demo`,
-      objectiveText: this.trial.demoObjective,
+      objectiveText: "Memorize the practice fragment while it glows, then rebuild it from memory.",
       simbaPrompt: "Read the fragment once, trust yourself, and let the right pieces return.",
       controlsHint: this.getControlsHint(),
       tutorialTitle: "Practice run",
-      tutorialText: "Nothing is scored yet. This is only to get comfortable restoring from memory.",
+      tutorialText: "The answer will hide after a moment. Then you restore it from memory.",
     });
     this.refreshHud();
   }
@@ -270,11 +323,11 @@ export class ApothecaryScene extends BaseScene {
     this.status = "The old remedies are waiting for the memory Aanavee already carries.";
     this.game.showGuidance({
       objectiveTitle: this.trial.objectiveTitle,
-      objectiveText: this.trial.objectiveText,
+      objectiveText: "Memorize each fragment while it glows, then restore the remedy from memory.",
       simbaPrompt: "Read the fragment once, trust yourself, and let the right pieces return.",
       controlsHint: this.getControlsHint(),
       tutorialTitle: "Live run",
-      tutorialText: "This time the shrine record counts.",
+      tutorialText: "Each fragment will hide after a moment. This time the shrine record counts.",
     });
     this.refreshHud();
   }
@@ -288,39 +341,211 @@ export class ApothecaryScene extends BaseScene {
     this.selectedIngredients = [];
     this.ingredientChoices = [];
     this.recipeTimer = 0;
+    this.recipeRecallTime = 0;
+    this.recipeMemorizeTime = 0;
+    this.memorizeTimeRemaining = 0;
     this.streak = 0;
     this.maxStreak = 0;
     this.correctCount = 0;
     this.mistakes = 0;
+    this.recipePhase = "memorize";
     this.ingredientLayer.removeChildren();
     this.timerBar.clear();
     this.updateSelectedText();
+    this.syncInteractionState();
   }
 
-  private createWorkbench(): Container {
-    const workbench = new Container();
+  private getSceneLayout(): ApothecaryLayout {
+    if (!this.game.isMobile()) {
+      return {
+        recipeX: 70,
+        recipeY: 166,
+        recipeWidth: 600,
+        recipeHeight: 260,
+        recipeTextX: 112,
+        recipeTitleY: 208,
+        recipeDetailY: 264,
+        recipeTextWidth: 520,
+        timerX: 78,
+        timerY: 438,
+        timerWidth: 584,
+        ingredientX: 770,
+        ingredientY: 194,
+        ingredientColumns: 3,
+        ingredientGapX: this.getIngredientGridXStep(),
+        ingredientGapY: this.getIngredientGridYStep(),
+        buttonY: 674,
+        clearButtonX: 906,
+        confirmButtonX: 1080,
+        selectedX: 112,
+        selectedY: 590,
+        selectedWidth: 660,
+        tableY: 540,
+        shelfX: 770,
+        shelfY: 174,
+        shelfWidth: 550,
+        shelfHeight: 320,
+        bowlX: 1020,
+        bowlY: 592,
+        bowlRadius: 92,
+        bowlGlowRadius: 138,
+      };
+    }
+
+    const bounds = this.game.getVisibleBounds();
+    const visibleLeft = bounds.left + 24;
+    const visibleRight = bounds.right - 24;
+    const visibleWidth = visibleRight - visibleLeft;
+    const centerX = (visibleLeft + visibleRight) / 2;
+    const recipeWidth = Math.min(720, visibleWidth - 8);
+    const cardWidth = this.getIngredientCardWidth();
+    const gapX = this.getIngredientGridXStep() - cardWidth;
+    const columns = 3;
+    const gridWidth = cardWidth * columns + gapX * (columns - 1);
+
+    return {
+      recipeX: centerX - recipeWidth / 2,
+      recipeY: 184,
+      recipeWidth,
+      recipeHeight: 148,
+      recipeTextX: centerX - recipeWidth / 2 + 24,
+      recipeTitleY: 214,
+      recipeDetailY: 250,
+      recipeTextWidth: recipeWidth - 48,
+      timerX: centerX - recipeWidth / 2,
+      timerY: 348,
+      timerWidth: recipeWidth,
+      ingredientX: centerX - gridWidth / 2,
+      ingredientY: 386,
+      ingredientColumns: columns,
+      ingredientGapX: this.getIngredientGridXStep(),
+      ingredientGapY: this.getIngredientGridYStep(),
+      buttonY: 692,
+      clearButtonX: centerX - 178,
+      confirmButtonX: centerX - 12,
+      selectedX: centerX - recipeWidth / 2 + 8,
+      selectedY: 754,
+      selectedWidth: recipeWidth - 16,
+      tableY: 614,
+      shelfX: centerX - gridWidth / 2 - 20,
+      shelfY: 368,
+      shelfWidth: gridWidth + 40,
+      shelfHeight:
+        this.getIngredientCardHeight() * 3 +
+        this.getIngredientGridYStep() * 2 -
+        this.getIngredientCardHeight() +
+        36,
+      bowlX: centerX,
+      bowlY: 730,
+      bowlRadius: 72,
+      bowlGlowRadius: 114,
+    };
+  }
+
+  private layoutScene(force = false): void {
+    const bounds = this.game.getVisibleBounds();
+    const nextLayout = this.getSceneLayout();
+    const nextKey = [
+      this.game.isMobile() ? "mobile" : "desktop",
+      bounds.left.toFixed(1),
+      bounds.right.toFixed(1),
+      bounds.top.toFixed(1),
+      bounds.bottom.toFixed(1),
+    ].join("|");
+
+    if (!force && nextKey === this.layoutKey) {
+      return;
+    }
+
+    this.layoutKey = nextKey;
+    this.currentLayout = nextLayout;
+
+    this.drawWorkbench(nextLayout);
+    this.recipePaper.clear();
+    this.recipePaper.roundRect(
+      nextLayout.recipeX,
+      nextLayout.recipeY,
+      nextLayout.recipeWidth,
+      nextLayout.recipeHeight,
+      24,
+    ).fill({ color: 0xf5efe0, alpha: 0.95 });
+    this.recipePaper.roundRect(
+      nextLayout.recipeX,
+      nextLayout.recipeY,
+      nextLayout.recipeWidth,
+      nextLayout.recipeHeight,
+      24,
+    ).stroke({ color: 0xd9cba6, width: 2, alpha: 0.85 });
+
+    this.recipeTitleText.position.set(nextLayout.recipeTextX, nextLayout.recipeTitleY);
+    this.recipeDetailText.position.set(nextLayout.recipeTextX, nextLayout.recipeDetailY);
+    this.selectedText.position.set(nextLayout.selectedX, nextLayout.selectedY);
+
+    this.recipeTitleText.style.fontSize = this.isCompactMobileLayout() ? 24 : 28;
+    this.recipeTitleText.style.wordWrapWidth = nextLayout.recipeTextWidth;
+    this.recipeDetailText.style.fontSize = this.isCompactMobileLayout() ? 18 : 22;
+    this.recipeDetailText.style.wordWrapWidth = nextLayout.recipeTextWidth;
+    this.selectedText.style.fontSize = this.isCompactMobileLayout() ? 18 : 22;
+    this.selectedText.style.wordWrapWidth = nextLayout.selectedWidth;
+
+    this.clearButton.position.set(nextLayout.clearButtonX, nextLayout.buttonY);
+    this.confirmButton.position.set(nextLayout.confirmButtonX, nextLayout.buttonY);
+
+    if (this.availableIngredientIds.length > 0) {
+      this.renderIngredients();
+    }
+
+    this.drawTimerBar();
+  }
+
+  private drawWorkbench(layout: ApothecaryLayout): void {
+    this.workbench.removeChildren();
 
     const table = new Graphics();
-    table.rect(0, 540, 1440, 270).fill({ color: 0x2a1d1f, alpha: 0.96 });
+    table.rect(0, layout.tableY, 1440, 810 - layout.tableY).fill({ color: 0x2a1d1f, alpha: 0.96 });
 
     const shelf = new Graphics();
-    shelf.roundRect(770, 174, 550, 320, 22).fill({ color: 0x201821, alpha: 0.82 });
-    shelf.roundRect(806, 228, 476, 12, 6).fill({ color: 0x5a4037, alpha: 0.92 });
-    shelf.roundRect(806, 334, 476, 12, 6).fill({ color: 0x5a4037, alpha: 0.92 });
-    shelf.roundRect(806, 438, 476, 12, 6).fill({ color: 0x5a4037, alpha: 0.92 });
+    shelf.roundRect(layout.shelfX, layout.shelfY, layout.shelfWidth, layout.shelfHeight, 22).fill({
+      color: 0x201821,
+      alpha: 0.82,
+    });
+
+    const cardHeight = this.getIngredientCardHeight();
+    const plankInset = layout.recipeWidth > 650 ? 36 : 22;
+    [0, 1, 2].forEach((row) => {
+      const plankY = layout.ingredientY + row * layout.ingredientGapY + row * cardHeight + 26;
+      shelf.roundRect(
+        layout.shelfX + plankInset,
+        plankY,
+        layout.shelfWidth - plankInset * 2,
+        10,
+        6,
+      ).fill({
+        color: 0x5a4037,
+        alpha: 0.92,
+      });
+    });
 
     const bowl = new Graphics();
-    bowl.circle(1020, 592, 92).fill({ color: 0x1f2430, alpha: 0.9 });
-    bowl.circle(1020, 592, 76).stroke({ color: 0xf5efe0, width: 2, alpha: 0.72 });
+    bowl.circle(layout.bowlX, layout.bowlY, layout.bowlRadius).fill({ color: 0x1f2430, alpha: 0.88 });
+    bowl.circle(layout.bowlX, layout.bowlY, Math.max(44, layout.bowlRadius - 16)).stroke({
+      color: 0xf5efe0,
+      width: 2,
+      alpha: 0.72,
+    });
 
     const bowlGlow = new Graphics();
-    bowlGlow.circle(1020, 592, 138).fill({ color: 0xf8b4c8, alpha: 0.08 });
+    bowlGlow.circle(layout.bowlX, layout.bowlY, layout.bowlGlowRadius).fill({
+      color: 0xf8b4c8,
+      alpha: 0.08,
+    });
 
-    workbench.addChild(table, shelf, bowlGlow, bowl);
-    return workbench;
+    this.workbench.addChild(table, shelf, bowlGlow, bowl);
   }
 
   private updateScene(deltaMs: number): void {
+    this.layoutScene();
+
     if (
       this.ended ||
       this.phaseState === "briefing" ||
@@ -330,11 +555,21 @@ export class ApothecaryScene extends BaseScene {
       return;
     }
 
-    this.recipeTimer -= deltaMs / 1000;
+    const deltaSeconds = deltaMs / 1000;
+    this.recipeTimer = Math.max(0, this.recipeTimer - deltaSeconds);
+
+    if (this.recipePhase === "memorize") {
+      this.memorizeTimeRemaining = Math.max(0, this.memorizeTimeRemaining - deltaSeconds);
+
+      if (this.memorizeTimeRemaining <= 0) {
+        this.enterRecallPhase();
+      }
+    }
+
     this.drawTimerBar();
     this.refreshHud();
 
-    if (this.recipeTimer <= 0) {
+    if (this.recipePhase === "recall" && this.recipeTimer <= 0) {
       this.handleMistake("The memory faded before the remedy settled. That's alright. Try again.");
     }
   }
@@ -363,16 +598,18 @@ export class ApothecaryScene extends BaseScene {
   private applyRecipe(recipe: RecipeDefinition, demoMode: boolean): void {
     this.currentRecipe = recipe;
     this.selectedIngredients = [];
-    this.recipeTimer = demoMode ? APOTHECARY_DEMO_TIME : this.getRecipeMaxTime(recipe, false);
+    this.recipePhase = "memorize";
+    this.recipeRecallTime = this.getRecallTime(recipe, demoMode);
+    this.recipeMemorizeTime = this.getMemorizeDuration(recipe, demoMode);
+    this.memorizeTimeRemaining = this.recipeMemorizeTime;
+    this.recipeTimer = this.getRecipeMaxTime(recipe, demoMode);
     this.availableIngredientIds = demoMode
       ? this.createDemoIngredients(recipe)
       : this.createAvailableIngredients(recipe);
-    this.renderIngredients();
-    this.recipeTitleText.text = `Memory Fragment: ${recipe.name}`;
-    this.recipeDetailText.text = `${demoMode ? "Practice fragment" : "Restore this remedy from memory."}\n\nRemembered sequence: ${recipe.ingredients
-      .map((ingredientId) => this.getIngredient(ingredientId).name)
-      .join("  ->  ")}`;
+    this.layoutScene(true);
+    this.updateRecipeCopy();
     this.updateSelectedText();
+    this.syncInteractionState();
     this.drawTimerBar();
   }
 
@@ -393,30 +630,38 @@ export class ApothecaryScene extends BaseScene {
   }
 
   private renderIngredients(): void {
+    if (!this.currentLayout) {
+      return;
+    }
+
+    const layout = this.currentLayout;
     this.ingredientLayer.removeChildren();
     this.ingredientChoices = [];
 
     this.availableIngredientIds.forEach((ingredientId, index) => {
       const definition = this.getIngredient(ingredientId);
-      const column = index % 3;
-      const row = Math.floor(index / 3);
+      const column = index % layout.ingredientColumns;
+      const row = Math.floor(index / layout.ingredientColumns);
       const button = this.createIngredientButton(definition);
       button.position.set(
-        770 + column * this.getIngredientGridXStep(),
-        194 + row * this.getIngredientGridYStep(),
+        layout.ingredientX + column * layout.ingredientGapX,
+        layout.ingredientY + row * layout.ingredientGapY,
       );
       this.ingredientLayer.addChild(button);
       this.ingredientChoices.push({ definition, node: button });
     });
+
+    this.syncInteractionState();
   }
 
   private createIngredientButton(definition: IngredientDefinition): Container {
     const container = new Container();
     const card = new Graphics();
+    const compactMobile = this.isCompactMobileLayout();
     const cardWidth = this.getIngredientCardWidth();
     const cardHeight = this.getIngredientCardHeight();
     const iconX = cardWidth / 2;
-    const iconY = this.game.isMobile() ? 34 : 30;
+    const iconY = compactMobile ? 26 : this.game.isMobile() ? 34 : 30;
     const label = new Text({
       text: definition.name,
       style: new TextStyle({
@@ -438,14 +683,21 @@ export class ApothecaryScene extends BaseScene {
     });
 
     const icon = new Graphics();
-    icon.circle(iconX, iconY, this.game.isMobile() ? 18 : 16).fill({ color: definition.tint, alpha: 0.95 });
-    icon.circle(iconX, iconY, this.game.isMobile() ? 34 : 30).fill({ color: definition.tint, alpha: 0.18 });
+    icon.circle(iconX, iconY, compactMobile ? 14 : this.game.isMobile() ? 18 : 16).fill({
+      color: definition.tint,
+      alpha: 0.95,
+    });
+    icon.circle(iconX, iconY, compactMobile ? 26 : this.game.isMobile() ? 34 : 30).fill({
+      color: definition.tint,
+      alpha: 0.18,
+    });
 
     label.anchor.set(0.5, 0);
-    label.position.set(cardWidth / 2, this.game.isMobile() ? 58 : 52);
+    label.position.set(cardWidth / 2, compactMobile ? 46 : this.game.isMobile() ? 58 : 52);
 
     container.eventMode = "static";
     container.cursor = "pointer";
+    container.hitArea = new Rectangle(0, 0, cardWidth, cardHeight);
     container.on("pointertap", () => this.selectIngredient(definition.id));
     container.on("pointerover", () => {
       container.scale.set(1.03);
@@ -462,6 +714,8 @@ export class ApothecaryScene extends BaseScene {
     if (
       !this.currentRecipe ||
       this.ended ||
+      this.recipePhase !== "recall" ||
+      this.selectedIngredients.length >= this.currentRecipe.ingredients.length ||
       (this.phaseState !== "demo" && this.phaseState !== "live")
     ) {
       return;
@@ -472,7 +726,7 @@ export class ApothecaryScene extends BaseScene {
   }
 
   private clearSelection(): void {
-    if (this.phaseState !== "demo" && this.phaseState !== "live") {
+    if ((this.phaseState !== "demo" && this.phaseState !== "live") || this.recipePhase !== "recall") {
       return;
     }
 
@@ -484,6 +738,7 @@ export class ApothecaryScene extends BaseScene {
     if (
       !this.currentRecipe ||
       this.ended ||
+      this.recipePhase !== "recall" ||
       (this.phaseState !== "demo" && this.phaseState !== "live")
     ) {
       return;
@@ -518,6 +773,76 @@ export class ApothecaryScene extends BaseScene {
     this.handleMistake("Those pieces don't belong in that memory. Give it another look.");
   }
 
+  private enterRecallPhase(): void {
+    if (!this.currentRecipe || this.recipePhase === "recall") {
+      return;
+    }
+
+    this.recipePhase = "recall";
+    this.status =
+      this.phaseState === "demo"
+        ? "The practice fragment is hidden now. Restore it from memory."
+        : "The fragment is hidden now. Restore the remedy from memory.";
+    this.updateRecipeCopy();
+    this.syncInteractionState();
+    this.game.updateGuidance({
+      objectiveText:
+        this.phaseState === "demo"
+          ? "The fragment is hidden now. Restore the practice remedy from memory."
+          : "The fragment is hidden now. Restore the remedy in the remembered order.",
+      simbaPrompt: "Okay, now trust what stayed with you.",
+      tutorialTitle: this.phaseState === "demo" ? "Practice recall" : "Recall phase",
+      tutorialText:
+        this.phaseState === "demo"
+          ? "The answer is hidden now. Rebuild the practice remedy from memory."
+          : "The answer is hidden now. Restore the remedy before the timer fades.",
+    });
+    this.refreshHud();
+  }
+
+  private updateRecipeCopy(): void {
+    if (!this.currentRecipe) {
+      return;
+    }
+
+    const sequence = this.currentRecipe.ingredients
+      .map((ingredientId) => this.getIngredient(ingredientId).name)
+      .join("  ->  ");
+    const practiceLabel = this.phaseState === "demo" ? "Practice fragment" : "Memory fragment";
+
+    this.recipeTitleText.text = `${practiceLabel}: ${this.currentRecipe.name}`;
+    this.recipeDetailText.text =
+      this.recipePhase === "memorize"
+        ? `${this.phaseState === "demo" ? "Practice first." : "Memorize this remedy first."}\n\nRemembered sequence: ${sequence}`
+        : `${this.phaseState === "demo" ? "Practice recall." : "Recall phase."}\n\nWhich ingredients did this remedy need? Restore them in order.`;
+  }
+
+  private syncInteractionState(): void {
+    const canInteract =
+      Boolean(this.currentRecipe) &&
+      !this.ended &&
+      this.recipePhase === "recall" &&
+      (this.phaseState === "demo" || this.phaseState === "live");
+
+    this.ingredientChoices.forEach(({ node }) => {
+      node.eventMode = canInteract ? "static" : "none";
+      node.cursor = canInteract ? "pointer" : "default";
+      node.alpha = canInteract ? 1 : 0.58;
+    });
+
+    if (this.confirmButton) {
+      this.confirmButton.eventMode = canInteract ? "static" : "none";
+      this.confirmButton.cursor = canInteract ? "pointer" : "default";
+      this.confirmButton.alpha = canInteract ? 0.95 : 0.5;
+    }
+
+    if (this.clearButton) {
+      this.clearButton.eventMode = canInteract ? "static" : "none";
+      this.clearButton.cursor = canInteract ? "pointer" : "default";
+      this.clearButton.alpha = canInteract ? 0.95 : 0.5;
+    }
+  }
+
   private handleMistake(message: string): void {
     this.status = message;
 
@@ -544,22 +869,35 @@ export class ApothecaryScene extends BaseScene {
   }
 
   private drawTimerBar(): void {
-    if (!this.currentRecipe) {
+    if (!this.currentRecipe || !this.currentLayout) {
       return;
     }
 
-    const maxTime = this.getRecipeMaxTime(this.currentRecipe, this.phaseState === "demo");
-    const ratio = Math.max(0, this.recipeTimer / maxTime);
+    const maxTime = this.recipePhase === "memorize" ? this.recipeMemorizeTime : this.recipeRecallTime;
+    const remainingTime =
+      this.recipePhase === "memorize" ? this.memorizeTimeRemaining : this.recipeTimer;
+    const ratio = Math.max(0, remainingTime / Math.max(0.01, maxTime));
     const timerHeight = this.getTimerBarHeight();
-    const timerY = this.game.isMobile() ? 435 : 438;
 
     this.timerBar.clear();
-    this.timerBar.roundRect(78, timerY, 584, timerHeight, timerHeight / 2).fill({
+    this.timerBar.roundRect(
+      this.currentLayout.timerX,
+      this.currentLayout.timerY,
+      this.currentLayout.timerWidth,
+      timerHeight,
+      timerHeight / 2,
+    ).fill({
       color: 0x8f7f5c,
       alpha: 0.2,
     });
-    this.timerBar.roundRect(78, timerY, 584 * ratio, timerHeight, timerHeight / 2).fill({
-      color: ratio > 0.33 ? 0x7c5cbf : 0xc0392b,
+    this.timerBar.roundRect(
+      this.currentLayout.timerX,
+      this.currentLayout.timerY,
+      this.currentLayout.timerWidth * ratio,
+      timerHeight,
+      timerHeight / 2,
+    ).fill({
+      color: this.recipePhase === "memorize" ? 0xf5c542 : ratio > 0.33 ? 0x7c5cbf : 0xc0392b,
       alpha: 0.9,
     });
   }
@@ -568,10 +906,16 @@ export class ApothecaryScene extends BaseScene {
     if (this.phaseState === "demo") {
       this.hud.updateValues({
         title: `${this.trial.title} Demo`,
-        subtitle: this.trial.demoObjective,
+        subtitle:
+          this.recipePhase === "memorize"
+            ? "Memorize the fragment before it fades."
+            : "Restore the practice remedy from memory.",
         score: 0,
         comboLabel: "Practice only",
-        timerLabel: `Recipe  ${Math.max(0, Math.ceil(this.recipeTimer))}s`,
+        timerLabel: `${this.recipePhase === "memorize" ? "Memorize" : "Recall"}  ${Math.max(
+          0,
+          Math.ceil(this.recipePhase === "memorize" ? this.memorizeTimeRemaining : this.recipeTimer),
+        )}s`,
         status: this.status,
       });
       return;
@@ -591,20 +935,46 @@ export class ApothecaryScene extends BaseScene {
 
     this.hud.updateValues({
       title: this.trial.title,
-      subtitle: this.trial.objectiveText,
+      subtitle:
+        this.recipePhase === "memorize"
+          ? "Memorize the fragment while it glows."
+          : "Restore the remedy from memory.",
       score: this.scoreSystem.getScore(),
       comboLabel: `Insight streak  ${this.streak}   Restored  ${this.correctCount}`,
-      timerLabel: `Recipe  ${Math.max(0, Math.ceil(this.recipeTimer))}s`,
+      timerLabel: `${this.recipePhase === "memorize" ? "Memorize" : "Recall"}  ${Math.max(
+          0,
+          Math.ceil(this.recipePhase === "memorize" ? this.memorizeTimeRemaining : this.recipeTimer),
+        )}s`,
       status: this.status,
     });
   }
 
-  private getRecipeMaxTime(recipe: RecipeDefinition, demoMode: boolean): number {
+  private getRecallTime(recipe: RecipeDefinition, demoMode: boolean): number {
     if (demoMode) {
-      return APOTHECARY_DEMO_TIME;
+      return Math.max(8, APOTHECARY_DEMO_TIME - this.getMemorizeDuration(recipe, true));
     }
 
     return Math.max(5.6, 10.2 - recipe.difficulty * 1.1);
+  }
+
+  private getMemorizeDuration(recipe: RecipeDefinition, demoMode: boolean): number {
+    if (demoMode) {
+      return 4.8;
+    }
+
+    if (recipe.difficulty <= 1) {
+      return 5;
+    }
+
+    if (recipe.difficulty === 2) {
+      return 4.2;
+    }
+
+    return 3.6;
+  }
+
+  private getRecipeMaxTime(recipe: RecipeDefinition, demoMode: boolean): number {
+    return this.getRecallTime(recipe, demoMode) + this.getMemorizeDuration(recipe, demoMode);
   }
 
   private getIngredient(ingredientId: IngredientId): IngredientDefinition {

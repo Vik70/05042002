@@ -39,7 +39,7 @@ export class ProgressionSystem {
 
     return {
       visible: true,
-      title: "Aanavee: The Seven Gifts",
+      title: "Aanavee: The Four Gifts",
       subtitle: hubCopy.subtitle,
       ambientLine: pickRandom(HUB_AMBIENT_LINES[Math.min(awakeningLevel, HUB_AMBIENT_LINES.length - 1)]),
       simbaPrompt: hubCopy.simbaPrompt,

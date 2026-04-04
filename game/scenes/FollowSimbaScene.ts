@@ -80,7 +80,9 @@ export class FollowSimbaScene extends BaseScene {
       objectiveTitle: "Follow Simba",
       objectiveText: this.waypoints[0].prompt,
       simbaPrompt: "Just keep with me. Nice and easy.",
-      controlsHint: "Guide Aanavee's glow through the shrine light.",
+      controlsHint: this.game.isMobile()
+        ? "Drag or tap to guide Aanavee's glow through the shrine light."
+        : "Guide Aanavee's glow through the shrine light.",
       tutorialTitle: "Guided opening",
       tutorialText: "Bring Aanavee's glow close to Simba whenever he stops.",
     });

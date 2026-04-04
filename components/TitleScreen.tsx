@@ -47,7 +47,7 @@ export function TitleScreen() {
               Aanavee
             </h1>
             <p className="mt-3 text-base italic text-paper-cream/80 sm:text-lg md:text-2xl">
-              The Seven Gifts
+              The Four Gifts
             </p>
           </div>
 

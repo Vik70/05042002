@@ -31,7 +31,7 @@ export function ResultsSequence({
   );
 
   return (
-    <div className="absolute inset-0 overflow-hidden">
+    <div className="absolute inset-0 z-50 overflow-hidden">
       {phase === "awakening" ? (
         <AwakeningReaction
           giftName={result.giftName}

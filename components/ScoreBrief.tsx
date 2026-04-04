@@ -1,6 +1,4 @@
 "use client";
-
-import { useEffect } from "react";
 import { RankBadge } from "@/components/RankBadge";
 import type { TrialResult } from "@/game/types/game";
 import { useIsTouchDevice } from "@/lib/hooks";
@@ -16,13 +14,6 @@ export function ScoreBrief({
   onContinue: () => void;
 }) {
   const isTouchDevice = useIsTouchDevice();
-
-  useEffect(() => {
-    const timeout = window.setTimeout(onContinue, 2800);
-    return () => {
-      window.clearTimeout(timeout);
-    };
-  }, [onContinue]);
 
   return (
     <button

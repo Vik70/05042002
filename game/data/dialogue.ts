@@ -19,12 +19,12 @@ export const OPENING_DIALOGUE: DialogueLine[] = [
   },
   {
     speaker: "Simba",
-    text: "<3... that is literally less than 3. I was just being a nerd earlier but... <3",
+    text: "oh yeah...<3 ... that is literally less than 3. I was just being a nerd earlier but... <3",
     portrait: "simba",
   },
   {
     speaker: "Simba",
-    text: "Anyways, I've been padding circles around this shrine waiting for you to show up.",
+    text: "Anyways, let's get to it. I've been padding circles around this shrine waiting for you to show up.",
     portrait: "simba",
   },
   {
@@ -34,7 +34,7 @@ export const OPENING_DIALOGUE: DialogueLine[] = [
   },
   {
     speaker: "Simba",
-    text: "Come on, pretty superstar. Stay close to me and I'll show you where the first gift is waking.",
+    text: "Come on, lil superstar. Stay close to me and I'll show you where the first gift is waking.",
     portrait: "simba",
   },
 ];
@@ -50,6 +50,11 @@ export const FOLLOW_SIMBA_DIALOGUE: DialogueLine[] = [
     text: "The lantern court wants your steady hands first. At least you should have steady hands cause your a sniper girl. Let's go wake the distant lights.",
     portrait: "simba",
   },
+  {
+    speaker: "Simba",
+    text: "you're**, whoops...",
+    portrait: "simba",
+  },
 ];
 
 export const HUB_COPY = [
@@ -60,9 +65,9 @@ export const HUB_COPY = [
     awakeningText: "Only a faint shimmer moves through the courtyard, waiting for the first gift.",
   },
   {
-    subtitle: "The first lights are awake now, and a ribbon of foxfire traces the next path through the shrine.",
+    subtitle: "The first lights are awake now, and a ribbon of spirit traces the next path through the shrine.",
     currentObjective: "Follow Simba to the Gift of Flow.",
-    simbaPrompt: "See? I knew you'd get that. Now the moon charms want their turn.",
+    simbaPrompt: "See? I knew you'd get that you smartie pants. Now the moon charms want their turn.",
     awakeningText: "The lantern court glows warmer, and the air begins moving in soft blue arcs.",
   },
   {
@@ -97,9 +102,9 @@ export const HUB_AMBIENT_LINES: string[][] = [
     "One little gift awake, and the whole shrine starts showing off.",
   ],
   [
-    "Foxfire drifts through the trees like it wants a better view.",
+    "The spirit of the shrine drifts through the trees like it wants a better view.",
     "The memory bench glints as if it just remembered Aanavee's name.",
-    "The shrine is getting clingy, in the sweetest possible way.",
+    "The shrine is getting clingy, in the sweetest possible way. (sorry if i get too clingy just lmk)",
   ],
   [
     "A low hum gathers near the inner chamber, like it is waiting for one more note.",
@@ -148,7 +153,7 @@ export const GIFT_REVEALS: Record<TrialId, GiftRevealCopy> = {
     simbaValueTheme: "The way you move through moments, light and sure.",
     awakeningSummary: "Moon charms answer your rhythm, and the shrine begins to dance.",
     simbaLine: "That one was lovely.",
-    awakeningText: "Foxfire swirls faster, petals lift into the air, and the path ahead glows blue-white.",
+    awakeningText: "The spirits of the shrine swirls faster, petals lift into the air, and the path ahead glows blue-white.",
     simbaReflection: [
       {
         speaker: "Simba",

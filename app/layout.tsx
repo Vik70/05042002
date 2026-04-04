@@ -3,7 +3,7 @@ import "@/app/globals.css";
 import { BackgroundWallpaper } from "@/components/BackgroundWallpaper";
 
 export const metadata: Metadata = {
-  title: "Aanavee: The Seven Gifts",
+  title: "Aanavee: The Four Gifts",
   description:
     "A guided moonlit shrine journey where Simba reveals Aanavee's gifts of precision, flow, insight, and voice.",
 };

@@ -13,7 +13,7 @@ export class IntroScene extends BaseScene {
     const shrineGate = this.createShrineGate();
     const petals = EffectsSystem.createPetalField(1440, 810, 30);
     const heading = this.createSceneHeading(
-      "Aanavee: The Seven Gifts",
+      "Aanavee: The Four Gifts",
       "Simba wakes the shrine with a quiet little grin.",
     );
 
