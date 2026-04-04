@@ -4,11 +4,11 @@ export const RANK_ORDER: Rank[] = ["bronze", "silver", "gold", "spirit", "mythic
 
 export const TRIAL_RANK_THRESHOLDS: Record<TrialId, Record<Rank, number>> = {
   marksman: {
-    bronze: 450,
-    silver: 900,
-    gold: 1450,
-    spirit: 1950,
-    mythic: 2500,
+    bronze: 250,
+    silver: 500,
+    gold: 820,
+    spirit: 1100,
+    mythic: 1400,
   },
   rally: {
     bronze: 500,

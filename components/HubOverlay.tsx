@@ -22,7 +22,7 @@ export function HubOverlay({ hub, onSelectTrial, onOpenEnding }: HubOverlayProps
 
   return (
     <div className="pointer-events-none absolute inset-0">
-      <div className="flex h-full flex-col overflow-y-auto p-3 pt-12 pb-safe md:p-6 md:pt-20">
+      <div className="pointer-events-auto flex h-full min-h-0 flex-col overflow-y-auto p-3 pt-12 pb-safe md:p-6 md:pt-20">
         <div className="flex flex-col gap-3 md:grid md:grid-cols-[minmax(0,420px)_1fr_minmax(0,360px)] md:items-start md:gap-6">
           <div className="pointer-events-auto rounded-[28px] border border-white/10 bg-black/18 px-4 py-4 shadow-[0_20px_60px_rgba(0,0,0,0.2)] backdrop-blur-md md:px-5 md:py-5">
             <div className="flex items-center gap-3">

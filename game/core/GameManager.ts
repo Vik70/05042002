@@ -16,6 +16,7 @@ import { VoiceScene } from "@/game/scenes/VoiceScene";
 import { DialogueSystem } from "@/game/systems/DialogueSystem";
 import { ProgressionSystem } from "@/game/systems/ProgressionSystem";
 import type {
+  CreditsReflection,
   CreditsState,
   FadeState,
   GiftPrepState,
@@ -33,7 +34,8 @@ import type { SaveData, TrialStats } from "@/game/types/save";
 import { isTouchDevice } from "@/lib/hooks";
 import { GAME_HEIGHT, GAME_WIDTH } from "@/lib/constants";
 
-const PORTRAIT_CANVAS_ZOOM = 1.3;
+const MAX_RENDER_DPR = 2;
+const PORTRAIT_CANVAS_ZOOM = 1.8;
 
 interface VisibleBounds {
   left: number;
@@ -58,6 +60,7 @@ const defaultCreditsState = (): CreditsState => ({
   visible: false,
   title: "",
   message: "",
+  reflection: null,
 });
 
 const defaultHubState = (): HubOverlayState => ({
@@ -173,9 +176,12 @@ export class GameManager {
     await this.app.init({
       width: GAME_WIDTH,
       height: GAME_HEIGHT,
+      autoDensity: true,
       antialias: true,
       backgroundAlpha: 0,
       preference: "webgl",
+      resolution:
+        typeof window === "undefined" ? 1 : Math.min(window.devicePixelRatio || 1, MAX_RENDER_DPR),
     });
 
     if (this.destroyed) {
@@ -349,7 +355,7 @@ export class GameManager {
     this.resultsResolver = null;
   }
 
-  showCredits(title: string, message: string): Promise<void> {
+  showCredits(title: string, message: string, reflection: CreditsReflection | null = null): Promise<void> {
     if (this.destroyed) {
       return Promise.resolve();
     }
@@ -362,6 +368,7 @@ export class GameManager {
         visible: true,
         title,
         message,
+        reflection,
       },
     };
     this.emitUi();
@@ -618,6 +625,8 @@ export class GameManager {
 
     const width = Math.max(1, Math.floor(this.hostElement.clientWidth));
     const height = Math.max(1, Math.floor(this.hostElement.clientHeight));
+    const dpr =
+      typeof window === "undefined" ? 1 : Math.min(window.devicePixelRatio || 1, MAX_RENDER_DPR);
     const containerAspect = width / height;
     const gameAspect = GAME_WIDTH / GAME_HEIGHT;
     const portraitZoom = containerAspect < gameAspect ? PORTRAIT_CANVAS_ZOOM : 1;
@@ -631,7 +640,9 @@ export class GameManager {
     const cropX = overflowX / (2 * scale);
     const cropY = overflowY / (2 * scale);
 
-    this.app.renderer.resize(width, height);
+    this.app.renderer.resize(width, height, dpr);
+    this.app.canvas.style.width = `${width}px`;
+    this.app.canvas.style.height = `${height}px`;
     this.stageScale = {
       x: scale,
       y: scale,

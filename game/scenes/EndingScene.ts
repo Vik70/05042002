@@ -1,3 +1,4 @@
+import { buildCreditsReflection } from "@/game/data/ending";
 import { Graphics } from "pixi.js";
 import { CREDITS_MESSAGE, ENDING_DIALOGUE } from "@/game/data/dialogue";
 import { BaseScene } from "@/game/scenes/BaseScene";
@@ -43,7 +44,11 @@ export class EndingScene extends BaseScene {
     }
 
     this.game.setEndingSeen();
-    await this.game.showCredits("One Last Thing", CREDITS_MESSAGE);
+    await this.game.showCredits(
+      "One Last Thing",
+      CREDITS_MESSAGE,
+      buildCreditsReflection(this.game.getSaveData()),
+    );
 
     if (this.destroyed || this.game.isDestroyed()) {
       return;

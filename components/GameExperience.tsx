@@ -23,9 +23,9 @@ export function GameExperience() {
   const router = useRouter();
   const shellRef = useRef<HTMLDivElement | null>(null);
   const topChromeRef = useRef<HTMLDivElement | null>(null);
+  const shouldLockCanvasTouchRef = useRef(false);
   const [manager, setManager] = useState<GameManager | null>(null);
   const [uiState, setUiState] = useState<UIState | null>(null);
-  const [muted, setMuted] = useState(false);
   const [topChromeHeight, setTopChromeHeight] = useState(0);
   const [showLandscapeHint, setShowLandscapeHint] = useState(false);
   const [viewportHeight, setViewportHeight] = useState(0);
@@ -35,7 +35,6 @@ export function GameExperience() {
   const handleReady = useCallback((nextManager: GameManager | null) => {
     setManager(nextManager);
     setUiState(nextManager?.getUiState() ?? null);
-    setMuted(nextManager?.audio.isMuted() ?? false);
   }, []);
 
   useEffect(() => {
@@ -58,7 +57,8 @@ export function GameExperience() {
     }
 
     const handleTouchMove = (event: TouchEvent) => {
-      if (event.cancelable) {
+      // Only lock the canvas during live gameplay so hub and modal overlays can scroll normally.
+      if (shouldLockCanvasTouchRef.current && event.cancelable) {
         event.preventDefault();
       }
     };
@@ -107,32 +107,30 @@ export function GameExperience() {
   }, []);
 
   const activeGameScene = uiState ? ACTIVE_GAME_SCENES.has(uiState.sceneId) : false;
+  const hasBlockingOverlay = Boolean(
+    uiState?.dialogue.visible ||
+      uiState?.giftPrep.visible ||
+      uiState?.results.visible ||
+      uiState?.credits.visible,
+  );
+  const shouldLockCanvasTouch = activeGameScene && !hasBlockingOverlay;
   const showPortraitGameplayLayout =
     Boolean(uiState) &&
     isPortraitViewport &&
-    activeGameScene &&
-    !uiState?.dialogue.visible &&
-    !uiState?.giftPrep.visible &&
-    !uiState?.results.visible &&
-    !uiState?.credits.visible;
+    shouldLockCanvasTouch;
   const showCompactLandscapeLayout =
     Boolean(uiState) &&
     !isPortraitViewport &&
-    activeGameScene &&
+    shouldLockCanvasTouch &&
     viewportHeight > 0 &&
     viewportHeight <= 500;
 
   useEffect(() => {
-    if (
-      !uiState ||
-      !isTouchDevice ||
-      !isPortraitViewport ||
-      !activeGameScene ||
-      uiState.dialogue.visible ||
-      uiState.giftPrep.visible ||
-      uiState.results.visible ||
-      uiState.credits.visible
-    ) {
+    shouldLockCanvasTouchRef.current = shouldLockCanvasTouch;
+  }, [shouldLockCanvasTouch]);
+
+  useEffect(() => {
+    if (!isTouchDevice || !isPortraitViewport || !shouldLockCanvasTouch) {
       setShowLandscapeHint(false);
       return;
     }
@@ -163,7 +161,7 @@ export function GameExperience() {
         window.clearTimeout(timeout);
       };
     }
-  }, [activeGameScene, isPortraitViewport, isTouchDevice, uiState]);
+  }, [isPortraitViewport, isTouchDevice, shouldLockCanvasTouch]);
 
   return (
     <GameContext.Provider value={manager}>
@@ -189,23 +187,6 @@ export function GameExperience() {
               >
                 Return Home
               </button>
-
-              <button
-                type="button"
-                disabled={!manager}
-                onClick={() => {
-                  if (!manager) {
-                    return;
-                  }
-
-                  const nextMuted = !manager.audio.isMuted();
-                  manager.audio.setMuted(nextMuted);
-                  setMuted(nextMuted);
-                }}
-                className="min-h-[44px] rounded-full border border-white/10 bg-black/35 px-3 py-1.5 text-xs text-paper-cream/80 backdrop-blur transition hover:bg-white/8 disabled:opacity-50 md:px-4 md:py-2 md:text-sm"
-              >
-                {muted ? "Unmute" : "Mute"}
-              </button>
             </div>
           </div>
 
@@ -216,13 +197,19 @@ export function GameExperience() {
           ) : (
             <>
               <SceneFade fade={uiState.fade} />
-              <ObjectiveBanner
-                guidance={uiState.guidance}
-                portraitLayout={showPortraitGameplayLayout}
-                topOffsetPx={topChromeHeight}
-                stackBelowTopBar={showCompactLandscapeLayout}
-              />
-              <TutorialPrompt guidance={uiState.guidance} portraitLayout={showPortraitGameplayLayout} />
+              {!showCompactLandscapeLayout ? (
+                <>
+                  <ObjectiveBanner
+                    guidance={uiState.guidance}
+                    portraitLayout={showPortraitGameplayLayout}
+                    topOffsetPx={topChromeHeight}
+                  />
+                  <TutorialPrompt
+                    guidance={uiState.guidance}
+                    portraitLayout={showPortraitGameplayLayout}
+                  />
+                </>
+              ) : null}
 
               {showLandscapeHint ? (
                 <div
@@ -278,6 +265,7 @@ export function GameExperience() {
                 <CreditsPanel
                   title={uiState.credits.title}
                   message={uiState.credits.message}
+                  reflection={uiState.credits.reflection}
                   onClose={() => manager.dismissCredits()}
                 />
               ) : null}

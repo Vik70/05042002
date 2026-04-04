@@ -138,10 +138,29 @@ export interface GiftPrepState {
   primaryLabel: string;
 }
 
+export interface CreditsReflectionGift {
+  trialId: TrialId;
+  giftName: string;
+  glowLabel: string;
+  recordText: string;
+  note: string;
+}
+
+export interface CreditsReflection {
+  heading: string;
+  introText: string;
+  resonanceLabel: string;
+  resonanceValue: string;
+  resonanceSummary: string;
+  gifts: CreditsReflectionGift[];
+  simbaReflection: string;
+}
+
 export interface CreditsState {
   visible: boolean;
   title: string;
   message: string;
+  reflection: CreditsReflection | null;
 }
 
 export interface FadeState {

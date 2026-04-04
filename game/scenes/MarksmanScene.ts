@@ -31,6 +31,7 @@ interface HitFlash {
 type MarksmanPhase = "briefing" | "demo" | "ready" | "live";
 
 const MARKSMAN_DEMO_GOAL = 2;
+const MARKSMAN_LIVE_DURATION_SECONDS = 35;
 
 export class MarksmanScene extends BaseScene {
   readonly id = "marksman" as const;
@@ -51,7 +52,7 @@ export class MarksmanScene extends BaseScene {
   private focus = 0;
   private charging = false;
   private spawnTimer = 0;
-  private remainingTime = 62;
+  private remainingTime = MARKSMAN_LIVE_DURATION_SECONDS;
   private totalShots = 0;
   private hitShots = 0;
   private misses = 0;
@@ -71,7 +72,7 @@ export class MarksmanScene extends BaseScene {
     this.targets = [];
     this.scoreSystem.reset();
     this.spawnTimer = 0;
-    this.remainingTime = 62;
+    this.remainingTime = MARKSMAN_LIVE_DURATION_SECONDS;
     this.totalShots = 0;
     this.hitShots = 0;
     this.misses = 0;
@@ -99,7 +100,7 @@ export class MarksmanScene extends BaseScene {
     this.on("pointermove", (event) => {
       const point = this.game.toLogicalPoint(event.global.x, event.global.y);
       const bounds = this.game.getVisibleBounds();
-      const touchOffset = this.game.isMobile() ? 60 : 0;
+      const touchOffset = this.game.isMobile() ? 150 : 0;
       this.pointerX = clamp(point.x, bounds.left + 46, bounds.right - 46);
       this.pointerY = clamp(
         point.y - touchOffset,
@@ -217,7 +218,7 @@ export class MarksmanScene extends BaseScene {
     this.scoreSystem.reset();
     this.comboSystem.reset();
     this.spawnTimer = 0;
-    this.remainingTime = 62;
+    this.remainingTime = MARKSMAN_LIVE_DURATION_SECONDS;
     this.totalShots = 0;
     this.hitShots = 0;
     this.misses = 0;
@@ -334,7 +335,8 @@ export class MarksmanScene extends BaseScene {
 
   private spawnTarget(): void {
     const isDemo = this.phase === "demo";
-    const wave = isDemo ? 1 : this.remainingTime > 42 ? 1 : this.remainingTime > 20 ? 2 : 3;
+    const runProgress = 1 - this.remainingTime / MARKSMAN_LIVE_DURATION_SECONDS;
+    const wave = isDemo ? 1 : runProgress < 0.34 ? 1 : runProgress < 0.68 ? 2 : 3;
     const baseRadius = isDemo ? 38 : wave === 1 ? 34 : wave === 2 ? 30 : 26;
     const radius = baseRadius * (this.game.isMobile() ? 1.3 : 1);
     const moving = isDemo ? false : Math.random() > (wave === 1 ? 0.58 : 0.34);

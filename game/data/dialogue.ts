@@ -14,12 +14,17 @@ export interface GiftRevealCopy {
 export const OPENING_DIALOGUE: DialogueLine[] = [
   {
     speaker: "Simba",
-    text: "There you are.",
+    text: "There you are lil sleepyhead birthday girl :D. Happy birthday <3. ",
     portrait: "simba",
   },
   {
     speaker: "Simba",
-    text: "I've been padding circles around this shrine waiting for you to show up.",
+    text: "<3... that is literally less than 3. I was just being a nerd earlier but... <3",
+    portrait: "simba",
+  },
+  {
+    speaker: "Simba",
+    text: "Anyways, I've been padding circles around this shrine waiting for you to show up.",
     portrait: "simba",
   },
   {
@@ -29,7 +34,7 @@ export const OPENING_DIALOGUE: DialogueLine[] = [
   },
   {
     speaker: "Simba",
-    text: "Come on, superstar. Stay close to me and I'll show you where the first gift is waking.",
+    text: "Come on, pretty superstar. Stay close to me and I'll show you where the first gift is waking.",
     portrait: "simba",
   },
 ];
@@ -37,12 +42,12 @@ export const OPENING_DIALOGUE: DialogueLine[] = [
 export const FOLLOW_SIMBA_DIALOGUE: DialogueLine[] = [
   {
     speaker: "Simba",
-    text: "That's it. Just like that.",
+    text: "That's it. Just like that :D.",
     portrait: "simba",
   },
   {
     speaker: "Simba",
-    text: "The lantern court wants your steady hands first. Let's go wake the distant lights.",
+    text: "The lantern court wants your steady hands first. At least you should have steady hands cause your a sniper girl. Let's go wake the distant lights.",
     portrait: "simba",
   },
 ];
@@ -88,7 +93,7 @@ export const HUB_AMBIENT_LINES: string[][] = [
   ],
   [
     "That first glow is still hanging in the air.",
-    "The petals seem much more interested in staying nearby.",
+    "You're as pretty as these petals I made lol. Hope you like them, (but you're prettier).",
     "One little gift awake, and the whole shrine starts showing off.",
   ],
   [
@@ -115,7 +120,7 @@ export const GIFT_REVEALS: Record<TrialId, GiftRevealCopy> = {
     giftMeaning: "Stillness, focus, and deliberate action",
     simbaValueTheme: "I admire how calm and dependable you are when things matter.",
     awakeningSummary: "You wake distant lights through perfect stillness.",
-    simbaLine: "Steady hands. Very Aanavee of you.",
+    simbaLine: "Steady hands. Very Sniper Secret Service Agent Aanavee of you to be honest...",
     awakeningText: "The lantern court brightens, and the first sleeping lights answer back.",
     simbaReflection: [
       {
@@ -125,12 +130,12 @@ export const GIFT_REVEALS: Record<TrialId, GiftRevealCopy> = {
       },
       {
         speaker: "Simba",
-        text: "That's Precision: stillness, focus, and doing the exact thing the moment needs.",
+        text: "That's Precision: stillness, focus, and doing the exact thing the moment needs. Who taught you that fr?",
         portrait: "simba",
       },
       {
         speaker: "Simba",
-        text: "I really adore that about you. When things matter, you become so calm and dependable.",
+        text: "I really adore that about you. When things matter, you become so calm and dependable. I feel it, and it means a lot to me x",
         portrait: "simba",
       },
     ],
@@ -147,7 +152,7 @@ export const GIFT_REVEALS: Record<TrialId, GiftRevealCopy> = {
     simbaReflection: [
       {
         speaker: "Simba",
-        text: "That one was lovely. You didn't fight the motion. You moved with it.",
+        text: "That one was lovely. You didn't fight the motion. You moved with it. ",
         portrait: "simba",
       },
       {
@@ -179,12 +184,12 @@ export const GIFT_REVEALS: Record<TrialId, GiftRevealCopy> = {
       },
       {
         speaker: "Simba",
-        text: "That's Insight: memory, understanding, and that quiet knowing you trust more than you realize.",
+        text: "That's Insight: memory, understanding, and that quiet knowing you trust more than you realise.",
         portrait: "simba",
       },
       {
         speaker: "Simba",
-        text: "You restore things, Aanavee. You make confusion feel solvable, and that is such a beautiful gift.",
+        text: "You restore things, Aanavee. You make confusion feel solvable, and that is such a beautiful gift. I really have a lot to learn from you frfr",
         portrait: "simba",
       },
     ],
@@ -206,7 +211,7 @@ export const GIFT_REVEALS: Record<TrialId, GiftRevealCopy> = {
       },
       {
         speaker: "Simba",
-        text: "That's Voice: expression, warmth, and the courage to be fully heard.",
+        text: "That's Voice: expression, warmth, and the courage to be fully heard. You know, since you showed me you singing in the uber back, I wanna make music with you one day x",
         portrait: "simba",
       },
       {
@@ -216,23 +221,23 @@ export const GIFT_REVEALS: Record<TrialId, GiftRevealCopy> = {
       },
       {
         speaker: "Simba",
-        text: "And when you sing? Oh, superstar. Everything leans closer.",
+        text: "And when you sing? Oh, superstar. Everything leans closer. Like the way I was leaning closer in the uber back lol x",
         portrait: "simba",
       },
     ],
-    ctaLabel: "Let's go home.",
+    ctaLabel: "Let's go home xx. ",
   },
 };
 
 export const ENDING_DIALOGUE: DialogueLine[] = [
   {
     speaker: "Simba",
-    text: "There you are again.",
+    text: "There you are again. hey :)",
     portrait: "simba",
   },
   {
     speaker: "Simba",
-    text: "Look at this place now. Brighter, warmer, a little dramatic. Very good work.",
+    text: "Look at this place now. Brighter, warmer, a little dramatic. Very good work. good job. Excellent.",
     portrait: "simba",
   },
   {
@@ -247,12 +252,12 @@ export const ENDING_DIALOGUE: DialogueLine[] = [
   },
   {
     speaker: "Simba",
-    text: "Flow is the way you move through moments with grace and momentum, never louder than you need to be.",
+    text: "Flow is the way you move through moments with grace and momentum. I know this from when we played against each other in a county badminton tournament. You were a force to be reckoned with lol.",
     portrait: "simba",
   },
   {
     speaker: "Simba",
-    text: "Insight is the way you understand what belongs together and quietly restore it.",
+    text: "Insight is the way you understand what belongs together and quietly restore it. Your line of work really is challenging, but real recognises real, so i know you're killing it :)",
     portrait: "simba",
   },
   {
@@ -262,15 +267,15 @@ export const ENDING_DIALOGUE: DialogueLine[] = [
   },
   {
     speaker: "Simba",
-    text: "These were never lessons. They were reflections of who you already are.",
+    text: "These were never lessons. They were reflections of who you already are. You say you haven't even shown me your full self, but I feel like i've known this about you since the day we spoke",
     portrait: "simba",
   },
   {
     speaker: "Simba",
-    text: "You were never just visiting this shrine, love. You were the reason it woke up. You were the legendary champion all along.",
+    text: "You were never just visiting this shrine, love. You were the reason it woke up. You woke me up :) (because those stupid alarms never work). You were my legendary champion bean girl all along.",
     portrait: "simba",
   },
 ];
 
 export const CREDITS_MESSAGE =
-  "For Aanavee, whose precision, flow, insight, and voice make every place warmer. This little shrine was only ever meant to reflect the gifts that were already hers.";
+  "For Aanavee, whose precision, flow, insight, and voice make every place warmer. This little shrine was only ever meant to reflect the gifts that were already hers. I love learning about you, and these are only just a HANDFUL of traits that resonated with me. I'm really lucky to have been able to get you know you so RIDICULOUSLY well in the last couple weeks we've known eachother. I hope that never ends, so that next birthday I can make a way better game :)";
