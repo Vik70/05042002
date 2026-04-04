@@ -1,0 +1,11 @@
+.next
+node_modules
+out
+dist
+coverage
+test-results
+playwright-report
+.cursor-tmp-home
+*.tsbuildinfo
+.DS_Store
+*.log
