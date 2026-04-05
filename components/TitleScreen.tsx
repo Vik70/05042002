@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { STORAGE_KEY } from "@/lib/constants";
 
@@ -38,7 +39,16 @@ export function TitleScreen() {
       <div className="moonlit-frame-soft relative my-auto max-h-[calc(100dvh-2rem)] w-full max-w-4xl overflow-y-auto rounded-[36px] border border-white/10 px-5 py-8 text-center [@media(max-height:500px)]:px-8 [@media(max-height:500px)]:py-6 md:px-14 md:py-14">
         <div className="flex flex-col gap-8 [@media(max-height:500px)]:grid [@media(max-height:500px)]:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] [@media(max-height:500px)]:items-center [@media(max-height:500px)]:gap-8">
           <div>
-            <div className="mx-auto mb-6 h-20 w-20 rounded-full border border-lantern-gold/30 bg-lantern-gold/10 shadow-[0_0_40px_rgba(245,197,66,0.18)] md:h-24 md:w-24" />
+            <div className="relative mx-auto mb-6 h-20 w-20 overflow-hidden rounded-full border border-lantern-gold/30 bg-lantern-gold/10 shadow-[0_0_40px_rgba(245,197,66,0.18)] md:h-24 md:w-24">
+              <Image
+                src="/images/av.png"
+                alt="Aanavee portrait"
+                fill
+                priority
+                sizes="96px"
+                className="object-cover"
+              />
+            </div>
 
             <p className="mb-3 text-sm uppercase tracking-[0.35em] text-sakura/80">
               A guided moonlit shrine journey
