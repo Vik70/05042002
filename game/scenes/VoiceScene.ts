@@ -661,6 +661,7 @@ export class VoiceScene extends BaseScene {
     const head = this.positionOnLane(note.laneIndex, this.getHeadRadius(note));
     this.spawnBurst(head.x, head.y, 0xf5c542);
     this.removeNote(note);
+    this.game.audio.play("gift-success");
 
     const perfect = offset <= this.getPerfectWindow();
 
@@ -710,6 +711,7 @@ export class VoiceScene extends BaseScene {
     const head = this.positionOnLane(note.laneIndex, this.getHeadRadius(note));
     this.spawnBurst(head.x, head.y, 0xf8b4c8);
     this.removeNote(note);
+    this.game.audio.play("gift-success");
 
     if (this.phaseState === "live") {
       this.comboSystem.registerSuccess();

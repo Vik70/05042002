@@ -1,9 +1,26 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Howl } from "howler";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { STORAGE_KEY } from "@/lib/constants";
+
+const BEGIN_GAME_SFX_PATH = encodeURI("/audio/sfx/OS_IC2_SFX_Begin_Game.wav");
+
+let beginGameSfx: Howl | null = null;
+
+const playBeginGameSfx = () => {
+  if (!beginGameSfx) {
+    beginGameSfx = new Howl({
+      src: [BEGIN_GAME_SFX_PATH],
+      volume: 0.16,
+    });
+  }
+
+  beginGameSfx.stop();
+  beginGameSfx.play();
+};
 
 export function TitleScreen() {
   const router = useRouter();
@@ -15,6 +32,7 @@ export function TitleScreen() {
   }, []);
 
   const handleContinue = () => {
+    playBeginGameSfx();
     router.push("/game");
   };
 
@@ -29,6 +47,7 @@ export function TitleScreen() {
 
     window.localStorage.removeItem(STORAGE_KEY);
     setHasProgress(false);
+    playBeginGameSfx();
     router.push("/game");
   };
 

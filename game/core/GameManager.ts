@@ -36,6 +36,21 @@ import { GAME_HEIGHT, GAME_WIDTH } from "@/lib/constants";
 
 const MAX_RENDER_DPR = 2;
 const PORTRAIT_CANVAS_ZOOM = 1.8;
+const GIFT_SUCCESS_SFX_PATH = encodeURI(
+  "/audio/sfx/ESM_New_Bonus_2_Sound_FX_Arcade_Casino_Kids_Mobile_App.wav",
+);
+const MARKSMAN_CHARGE_SFX_PATH = encodeURI(
+  "/audio/sfx/ESM_Ambient_Game_Super_Charge_Power_Up_Booster_2_Grab_Lush_Points_Unlock_Booster.wav",
+);
+const APOTHECARY_SELECT_SFX_PATH = encodeURI(
+  "/audio/sfx/ESM_Pizza_Quick_Coin_6_Cartoon_Arcade_Game_SFX_FX_Mobile_Sound_Item_Collect.wav",
+);
+const APOTHECARY_CLEAR_SFX_PATH = encodeURI(
+  "/audio/sfx/ESM_Pizza_Quick_Coin_3_Cartoon_Arcade_Game_SFX_FX_Mobile_Sound_Item_Collect.wav",
+);
+const APOTHECARY_CONFIRM_SFX_PATH = encodeURI(
+  "/audio/sfx/ESM_Pizza_Quick_Coin_7_Cartoon_Arcade_Game_SFX_FX_Mobile_Sound_Item_Collect.wav",
+);
 
 interface VisibleBounds {
   left: number;
@@ -170,6 +185,7 @@ export class GameManager {
     this.hostElement = hostElement;
     this.saveManager.load();
     this.input.attach();
+    this.registerAudioDefaults();
 
     this.app = new Application();
     this.appDestroyed = false;
@@ -210,6 +226,30 @@ export class GameManager {
         ? "followSimba"
         : "hub";
     await this.sceneRouter.goTo(startingScene);
+  }
+
+  private registerAudioDefaults(): void {
+    this.audio.register("gift-success", {
+      src: [GIFT_SUCCESS_SFX_PATH],
+      volume: 0.14,
+    });
+    this.audio.register("marksman-charge", {
+      src: [MARKSMAN_CHARGE_SFX_PATH],
+      loop: true,
+      volume: 0.09,
+    });
+    this.audio.register("apothecary-select", {
+      src: [APOTHECARY_SELECT_SFX_PATH],
+      volume: 0.12,
+    });
+    this.audio.register("apothecary-clear", {
+      src: [APOTHECARY_CLEAR_SFX_PATH],
+      volume: 0.12,
+    });
+    this.audio.register("apothecary-confirm", {
+      src: [APOTHECARY_CONFIRM_SFX_PATH],
+      volume: 0.12,
+    });
   }
 
   destroy(): void {

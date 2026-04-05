@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { CreditsPanel } from "@/components/CreditsPanel";
 import { DialogueBox } from "@/components/DialogueBox";
 import { GameCanvas } from "@/components/GameCanvas";
+import { GameMenu } from "@/components/GameMenu";
 import { GiftPrepOverlay } from "@/components/GiftPrepOverlay";
 import { HubOverlay } from "@/components/HubOverlay";
 import { ObjectiveBanner } from "@/components/ObjectiveBanner";
@@ -12,12 +13,23 @@ import { ResultsCard } from "@/components/ResultsCard";
 import { SceneFade } from "@/components/SceneFade";
 import { TutorialPrompt } from "@/components/TutorialPrompt";
 import { GameContext } from "@/game/core/GameContext";
+import type { AudioState, PlaylistTrackDefinition } from "@/game/core/AudioManager";
 import type { GameManager } from "@/game/core/GameManager";
 import type { UIState } from "@/game/types/game";
 import { useIsPortraitViewport, useIsTouchDevice } from "@/lib/hooks";
 
 const ACTIVE_GAME_SCENES = new Set(["followSimba", "marksman", "rally", "apothecary", "voice"]);
 const LANDSCAPE_HINT_STORAGE_KEY = "aanavee-landscape-hint-seen";
+const AUDIO_MUTED_STORAGE_KEY = "aanavee-audio-muted";
+const defaultAudioState: AudioState = {
+  muted: false,
+  hasPlaylist: false,
+  currentTrackId: null,
+  currentTrackLabel: "",
+  currentTrackIndex: -1,
+  trackCount: 0,
+  isPlaying: false,
+};
 
 export function GameExperience() {
   const router = useRouter();
@@ -26,6 +38,7 @@ export function GameExperience() {
   const shouldLockCanvasTouchRef = useRef(false);
   const [manager, setManager] = useState<GameManager | null>(null);
   const [uiState, setUiState] = useState<UIState | null>(null);
+  const [audioState, setAudioState] = useState<AudioState>(defaultAudioState);
   const [showObjectiveBanner, setShowObjectiveBanner] = useState(true);
   const [topChromeHeight, setTopChromeHeight] = useState(0);
   const [showLandscapeHint, setShowLandscapeHint] = useState(false);
@@ -40,6 +53,7 @@ export function GameExperience() {
 
   useEffect(() => {
     if (!manager) {
+      setAudioState(defaultAudioState);
       return;
     }
 
@@ -48,6 +62,80 @@ export function GameExperience() {
       setUiState(nextState);
     });
   }, [manager]);
+
+  useEffect(() => {
+    if (!manager) {
+      setAudioState(defaultAudioState);
+      return;
+    }
+
+    try {
+      manager.audio.setMuted(window.localStorage.getItem(AUDIO_MUTED_STORAGE_KEY) === "true");
+    } catch {
+      manager.audio.setMuted(false);
+    }
+
+    let cancelled = false;
+    const unsubscribe = manager.audio.subscribe((nextState) => {
+      if (!cancelled) {
+        setAudioState(nextState);
+      }
+    });
+
+    const loadPlaylist = async () => {
+      try {
+        const response = await fetch("/api/bgmusic", { cache: "no-store" });
+        if (!response.ok) {
+          return;
+        }
+
+        const data = (await response.json()) as { tracks?: PlaylistTrackDefinition[] };
+        if (cancelled) {
+          return;
+        }
+
+        manager.audio.setPlaylist(Array.isArray(data.tracks) ? data.tracks : []);
+        manager.audio.startPlaylist();
+      } catch {
+        if (!cancelled) {
+          manager.audio.setPlaylist([]);
+        }
+      }
+    };
+
+    void loadPlaylist();
+
+    return () => {
+      cancelled = true;
+      unsubscribe();
+    };
+  }, [manager]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(AUDIO_MUTED_STORAGE_KEY, String(audioState.muted));
+    } catch {
+      // Ignore storage failures in private browsing or restricted environments.
+    }
+  }, [audioState.muted]);
+
+  useEffect(() => {
+    if (!manager || !audioState.hasPlaylist || audioState.isPlaying) {
+      return;
+    }
+
+    const tryStartPlaylist = () => {
+      manager.audio.startPlaylist();
+    };
+
+    window.addEventListener("pointerdown", tryStartPlaylist, { passive: true });
+    window.addEventListener("keydown", tryStartPlaylist);
+
+    return () => {
+      window.removeEventListener("pointerdown", tryStartPlaylist);
+      window.removeEventListener("keydown", tryStartPlaylist);
+    };
+  }, [audioState.hasPlaylist, audioState.isPlaying, manager]);
 
   useEffect(() => {
     const shell = shellRef.current;
@@ -205,24 +293,21 @@ export function GameExperience() {
             className="pointer-events-none absolute inset-x-0 top-0 z-40 pl-safe pr-safe pt-safe"
           >
             <div
-              className={`pointer-events-auto flex items-center justify-between gap-3 ${
+              className={`pointer-events-auto flex items-center justify-end gap-3 ${
                 showCompactLandscapeLayout ? "p-2" : "p-3 md:p-4"
               }`}
             >
-              <button
-                type="button"
-                onClick={() => {
+              <GameMenu
+                compact={showCompactLandscapeLayout}
+                audioState={audioState}
+                onPreviousTrack={() => manager?.audio.previousTrack()}
+                onToggleMute={() => manager?.audio.toggleMuted()}
+                onNextTrack={() => manager?.audio.nextTrack()}
+                onReturnHome={() => {
                   manager?.destroy();
                   router.push("/");
                 }}
-                className={`rounded-full border border-white/10 bg-black/35 text-paper-cream/80 backdrop-blur transition hover:bg-white/8 ${
-                  showCompactLandscapeLayout
-                    ? "min-h-[36px] px-2.5 py-1 text-[11px]"
-                    : "min-h-[44px] px-3 py-1.5 text-xs md:px-4 md:py-2 md:text-sm"
-                }`}
-              >
-                Return Home
-              </button>
+              />
             </div>
           </div>
 

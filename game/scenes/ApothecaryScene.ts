@@ -835,6 +835,7 @@ export class ApothecaryScene extends BaseScene {
     }
 
     this.selectedIngredients.push(ingredientId);
+    this.game.audio.play("apothecary-select");
     this.updateSelectedText();
     this.syncInteractionState();
   }
@@ -849,7 +850,12 @@ export class ApothecaryScene extends BaseScene {
       return;
     }
 
+    if (!this.selectedIngredients.length) {
+      return;
+    }
+
     this.selectedIngredients = [];
+    this.game.audio.play("apothecary-clear");
     this.updateSelectedText();
     this.syncInteractionState();
   }
@@ -868,6 +874,7 @@ export class ApothecaryScene extends BaseScene {
       return;
     }
 
+    this.game.audio.play("apothecary-confirm");
     const expected = this.currentRecipe.ingredients.join("|");
     const actual = this.selectedIngredients.join("|");
 

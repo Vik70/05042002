@@ -14,7 +14,7 @@ export interface GiftRevealCopy {
 export const OPENING_DIALOGUE: DialogueLine[] = [
   {
     speaker: "Simba",
-    text: "There you are lil sleepyhead birthday girl :D. Happy birthday <3. ",
+    text: "There you are lil beautiful birthday girl :D. Happy birthday <3. ",
     portrait: "simba",
   },
   {

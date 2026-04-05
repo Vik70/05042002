@@ -110,7 +110,7 @@ export class MarksmanScene extends BaseScene {
       this.reticle.position.set(this.pointerX, this.pointerY);
     });
     this.on("pointerdown", () => {
-      this.charging = true;
+      this.beginCharge();
     });
     this.on("pointerup", () => {
       this.fire();
@@ -127,6 +127,10 @@ export class MarksmanScene extends BaseScene {
     this.game.hideHubOverlay();
     this.game.clearGuidance();
     void this.runGiftFlow();
+  }
+
+  async exit(): Promise<void> {
+    this.stopChargeLoop();
   }
 
   private async runGiftFlow(): Promise<void> {
@@ -171,6 +175,7 @@ export class MarksmanScene extends BaseScene {
       return;
     }
 
+    this.stopChargeLoop();
     this.phase = "ready";
     this.clearTargets();
     this.focus = 0;
@@ -214,6 +219,7 @@ export class MarksmanScene extends BaseScene {
   }
 
   private resetRunState(): void {
+    this.stopChargeLoop();
     this.clearTargets();
     this.scoreSystem.reset();
     this.comboSystem.reset();
@@ -226,6 +232,22 @@ export class MarksmanScene extends BaseScene {
     this.focus = 0;
     this.charging = false;
     this.targetCounter = 0;
+  }
+
+  private beginCharge(): void {
+    const activeRun = this.phase === "demo" || this.phase === "live";
+    if (this.ended || !activeRun || this.charging) {
+      return;
+    }
+
+    this.charging = true;
+    if (!this.game.audio.isPlaying("marksman-charge")) {
+      this.game.audio.play("marksman-charge");
+    }
+  }
+
+  private stopChargeLoop(): void {
+    this.game.audio.stop("marksman-charge");
   }
 
   private clearTargets(): void {
@@ -383,6 +405,8 @@ export class MarksmanScene extends BaseScene {
     const liveRun = this.phase === "live";
     const demoRun = this.phase === "demo";
 
+    this.stopChargeLoop();
+
     if (this.ended || (!liveRun && !demoRun) || !this.charging) {
       this.charging = false;
       return;
@@ -466,6 +490,7 @@ export class MarksmanScene extends BaseScene {
     }
 
     this.spawnHitFlash(target.node.x, target.node.y, 0xf5c542, target.radius);
+    this.game.audio.play("gift-success");
     this.removeChild(target.node);
     this.targets = this.targets.filter((existing) => existing.id !== target.id);
     this.refreshHud();
@@ -568,6 +593,7 @@ export class MarksmanScene extends BaseScene {
       return;
     }
 
+    this.stopChargeLoop();
     this.ended = true;
     this.game.clearGuidance();
     this.clearTargets();

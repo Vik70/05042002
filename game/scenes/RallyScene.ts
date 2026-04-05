@@ -579,6 +579,7 @@ export class RallyScene extends BaseScene {
 
     const perfect = offset <= this.getPerfectWindow();
     this.spawnRingFlash(perfect ? 0xf8b4c8 : 0x6ec6ff);
+    this.game.audio.play("gift-success");
 
     if (this.phaseState === "live") {
       this.comboSystem.registerSuccess();
@@ -621,6 +622,7 @@ export class RallyScene extends BaseScene {
   private completeHold(charm: CharmNote): void {
     this.removeCharm(charm);
     this.spawnRingFlash(charm.perfectHold ? 0xf5c542 : 0x6ec6ff);
+    this.game.audio.play("gift-success");
 
     if (this.phaseState === "live") {
       this.comboSystem.registerSuccess();
