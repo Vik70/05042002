@@ -32,6 +32,24 @@ const bodyStyle = new TextStyle({
   wordWrapWidth: 520,
 });
 
+const phaseHintStyle = new TextStyle({
+  fill: 0xf5efe0,
+  fontFamily: "Georgia, serif",
+  fontSize: 20,
+  fontWeight: "600",
+  wordWrap: true,
+  wordWrapWidth: 520,
+  lineHeight: 28,
+});
+
+const phaseBadgeStyle = new TextStyle({
+  fill: 0x2c1810,
+  fontFamily: "Georgia, serif",
+  fontSize: 16,
+  fontWeight: "700",
+  letterSpacing: 2,
+});
+
 interface IngredientChoice {
   definition: IngredientDefinition;
   node: Container;
@@ -69,6 +87,11 @@ interface ApothecaryLayout {
   bowlY: number;
   bowlRadius: number;
   bowlGlowRadius: number;
+  hintX: number;
+  hintY: number;
+  hintWidth: number;
+  phaseBadgeX: number;
+  phaseBadgeY: number;
 }
 
 type ApothecaryPhase = "briefing" | "demo" | "ready" | "live";
@@ -86,8 +109,11 @@ export class ApothecaryScene extends BaseScene {
   private readonly petals = EffectsSystem.createPetalField(1440, 810, 24, 0xf8b4c8);
   private readonly workbench = new Container();
   private readonly recipePaper = new Graphics();
+  private readonly phaseBadge = new Graphics();
+  private readonly phaseBadgeText = new Text({ text: "", style: phaseBadgeStyle });
   private readonly recipeTitleText = new Text({ text: "", style: recipeStyle });
   private readonly recipeDetailText = new Text({ text: "", style: bodyStyle });
+  private readonly phaseHintText = new Text({ text: "", style: phaseHintStyle });
   private readonly selectedText = new Text({ text: "", style: bodyStyle });
   private readonly timerBar = new Graphics();
   private readonly ingredientLayer = new Container();
@@ -124,40 +150,44 @@ export class ApothecaryScene extends BaseScene {
     return this.game.isMobile() && bounds.right - bounds.left <= 900;
   }
 
+  private isWideMobileLayout(): boolean {
+    return this.game.isMobile() && !this.isCompactMobileLayout();
+  }
+
   private getIngredientCardWidth(): number {
-    return this.isCompactMobileLayout() ? 150 : this.game.isMobile() ? 172 : 148;
+    return this.isCompactMobileLayout() ? 150 : this.isWideMobileLayout() ? 156 : 148;
   }
 
   private getIngredientCardHeight(): number {
-    return this.isCompactMobileLayout() ? 90 : this.game.isMobile() ? 108 : 92;
+    return this.isCompactMobileLayout() ? 90 : this.isWideMobileLayout() ? 96 : 92;
   }
 
   private getIngredientLabelFontSize(): number {
-    return this.isCompactMobileLayout() ? 18 : this.game.isMobile() ? 22 : 18;
+    return this.isCompactMobileLayout() ? 18 : this.isWideMobileLayout() ? 18 : 18;
   }
 
   private getIngredientGridXStep(): number {
     return this.isCompactMobileLayout()
       ? this.getIngredientCardWidth() + 16
-      : this.game.isMobile()
-        ? 182
+      : this.isWideMobileLayout()
+        ? this.getIngredientCardWidth() + 20
         : 174;
   }
 
   private getIngredientGridYStep(): number {
     return this.isCompactMobileLayout()
       ? this.getIngredientCardHeight() + 14
-      : this.game.isMobile()
-        ? 128
+      : this.isWideMobileLayout()
+        ? this.getIngredientCardHeight() + 16
         : 118;
   }
 
   private getActionButtonHeight(): number {
-    return this.isCompactMobileLayout() ? 58 : this.game.isMobile() ? 64 : 56;
+    return this.isCompactMobileLayout() ? 58 : this.isWideMobileLayout() ? 60 : 56;
   }
 
   private getTimerBarHeight(): number {
-    return this.isCompactMobileLayout() ? 20 : this.game.isMobile() ? 24 : 18;
+    return this.isCompactMobileLayout() ? 20 : this.isWideMobileLayout() ? 20 : 18;
   }
 
   async init(): Promise<void> {
@@ -212,8 +242,11 @@ export class ApothecaryScene extends BaseScene {
       backdrop,
       this.workbench,
       this.recipePaper,
+      this.phaseBadge,
+      this.phaseBadgeText,
       this.recipeTitleText,
       this.recipeDetailText,
+      this.phaseHintText,
       this.ingredientLayer,
       this.selectedText,
       this.timerBar,
@@ -363,8 +396,8 @@ export class ApothecaryScene extends BaseScene {
         recipeWidth: 600,
         recipeHeight: 260,
         recipeTextX: 112,
-        recipeTitleY: 208,
-        recipeDetailY: 264,
+        recipeTitleY: 224,
+        recipeDetailY: 280,
         recipeTextWidth: 520,
         timerX: 78,
         timerY: 438,
@@ -389,6 +422,11 @@ export class ApothecaryScene extends BaseScene {
         bowlY: 592,
         bowlRadius: 92,
         bowlGlowRadius: 138,
+        hintX: 770,
+        hintY: 156,
+        hintWidth: 550,
+        phaseBadgeX: 112,
+        phaseBadgeY: 188,
       };
     }
 
@@ -397,6 +435,57 @@ export class ApothecaryScene extends BaseScene {
     const visibleRight = bounds.right - 24;
     const visibleWidth = visibleRight - visibleLeft;
     const centerX = (visibleLeft + visibleRight) / 2;
+
+    if (this.isWideMobileLayout()) {
+      const leftColumnWidth = Math.min(532, Math.max(468, visibleWidth * 0.4));
+      const rightColumnWidth = visibleWidth - leftColumnWidth - 36;
+      const recipeX = visibleLeft;
+      const shelfX = recipeX + leftColumnWidth + 36;
+      const cardWidth = this.getIngredientCardWidth();
+      const gapX = this.getIngredientGridXStep() - cardWidth;
+      const columns = 3;
+      const gridWidth = cardWidth * columns + gapX * (columns - 1);
+
+      return {
+        recipeX,
+        recipeY: 188,
+        recipeWidth: leftColumnWidth,
+        recipeHeight: 214,
+        recipeTextX: recipeX + 24,
+        recipeTitleY: 238,
+        recipeDetailY: 280,
+        recipeTextWidth: leftColumnWidth - 48,
+        timerX: recipeX,
+        timerY: 420,
+        timerWidth: leftColumnWidth,
+        ingredientX: shelfX + Math.max(18, (rightColumnWidth - gridWidth) / 2),
+        ingredientY: 268,
+        ingredientColumns: columns,
+        ingredientGapX: this.getIngredientGridXStep(),
+        ingredientGapY: this.getIngredientGridYStep(),
+        buttonY: 694,
+        clearButtonX: recipeX + 8,
+        confirmButtonX: recipeX + 176,
+        selectedX: recipeX + 6,
+        selectedY: 466,
+        selectedWidth: leftColumnWidth - 12,
+        tableY: 552,
+        shelfX,
+        shelfY: 222,
+        shelfWidth: rightColumnWidth,
+        shelfHeight: 356,
+        bowlX: recipeX + leftColumnWidth - 144,
+        bowlY: 632,
+        bowlRadius: 82,
+        bowlGlowRadius: 126,
+        hintX: shelfX + 12,
+        hintY: 186,
+        hintWidth: rightColumnWidth - 24,
+        phaseBadgeX: recipeX + 24,
+        phaseBadgeY: 206,
+      };
+    }
+
     const recipeWidth = Math.min(720, visibleWidth - 8);
     const cardWidth = this.getIngredientCardWidth();
     const gapX = this.getIngredientGridXStep() - cardWidth;
@@ -409,8 +498,8 @@ export class ApothecaryScene extends BaseScene {
       recipeWidth,
       recipeHeight: 148,
       recipeTextX: centerX - recipeWidth / 2 + 24,
-      recipeTitleY: 214,
-      recipeDetailY: 250,
+      recipeTitleY: 232,
+      recipeDetailY: 268,
       recipeTextWidth: recipeWidth - 48,
       timerX: centerX - recipeWidth / 2,
       timerY: 348,
@@ -439,6 +528,11 @@ export class ApothecaryScene extends BaseScene {
       bowlY: 730,
       bowlRadius: 72,
       bowlGlowRadius: 114,
+      hintX: centerX,
+      hintY: 0,
+      hintWidth: 0,
+      phaseBadgeX: centerX - recipeWidth / 2 + 18,
+      phaseBadgeY: 202,
     };
   }
 
@@ -480,13 +574,16 @@ export class ApothecaryScene extends BaseScene {
     this.recipeTitleText.position.set(nextLayout.recipeTextX, nextLayout.recipeTitleY);
     this.recipeDetailText.position.set(nextLayout.recipeTextX, nextLayout.recipeDetailY);
     this.selectedText.position.set(nextLayout.selectedX, nextLayout.selectedY);
+    this.phaseHintText.position.set(nextLayout.hintX, nextLayout.hintY);
 
-    this.recipeTitleText.style.fontSize = this.isCompactMobileLayout() ? 24 : 28;
+    this.recipeTitleText.style.fontSize = this.isCompactMobileLayout() ? 22 : this.isWideMobileLayout() ? 24 : 28;
     this.recipeTitleText.style.wordWrapWidth = nextLayout.recipeTextWidth;
-    this.recipeDetailText.style.fontSize = this.isCompactMobileLayout() ? 18 : 22;
+    this.recipeDetailText.style.fontSize = this.isCompactMobileLayout() ? 16 : this.isWideMobileLayout() ? 18 : 22;
     this.recipeDetailText.style.wordWrapWidth = nextLayout.recipeTextWidth;
-    this.selectedText.style.fontSize = this.isCompactMobileLayout() ? 18 : 22;
+    this.selectedText.style.fontSize = this.isCompactMobileLayout() ? 16 : this.isWideMobileLayout() ? 18 : 22;
     this.selectedText.style.wordWrapWidth = nextLayout.selectedWidth;
+    this.phaseHintText.style.fontSize = this.isWideMobileLayout() ? 18 : 20;
+    this.phaseHintText.style.wordWrapWidth = nextLayout.hintWidth;
 
     this.clearButton.position.set(nextLayout.clearButtonX, nextLayout.buttonY);
     this.confirmButton.position.set(nextLayout.confirmButtonX, nextLayout.buttonY);
@@ -496,6 +593,7 @@ export class ApothecaryScene extends BaseScene {
     }
 
     this.drawTimerBar();
+    this.updatePhasePresentation();
   }
 
   private drawWorkbench(layout: ApothecaryLayout): void {
@@ -566,6 +664,8 @@ export class ApothecaryScene extends BaseScene {
       }
     }
 
+    this.updateSelectedText();
+    this.updatePhasePresentation();
     this.drawTimerBar();
     this.refreshHud();
 
@@ -609,6 +709,7 @@ export class ApothecaryScene extends BaseScene {
     this.layoutScene(true);
     this.updateRecipeCopy();
     this.updateSelectedText();
+    this.updatePhasePresentation();
     this.syncInteractionState();
     this.drawTimerBar();
   }
@@ -698,12 +799,14 @@ export class ApothecaryScene extends BaseScene {
     container.eventMode = "static";
     container.cursor = "pointer";
     container.hitArea = new Rectangle(0, 0, cardWidth, cardHeight);
-    container.on("pointertap", () => this.selectIngredient(definition.id));
+    container.on("pointerdown", () => this.selectIngredient(definition.id));
     container.on("pointerover", () => {
-      container.scale.set(1.03);
+      if (container.cursor === "pointer") {
+        container.scale.set(1.03);
+      }
     });
     container.on("pointerout", () => {
-      container.scale.set(1);
+      this.syncInteractionState();
     });
 
     container.addChild(card, icon, label);
@@ -714,33 +817,54 @@ export class ApothecaryScene extends BaseScene {
     if (
       !this.currentRecipe ||
       this.ended ||
-      this.recipePhase !== "recall" ||
       this.selectedIngredients.length >= this.currentRecipe.ingredients.length ||
       (this.phaseState !== "demo" && this.phaseState !== "live")
     ) {
       return;
     }
 
+    if (this.recipePhase !== "recall") {
+      this.showLockedIngredientFeedback();
+      return;
+    }
+
+    if (this.selectedIngredients.includes(ingredientId)) {
+      this.status = "That ingredient is already in the bowl. Choose the next one or clear the bowl.";
+      this.refreshHud();
+      return;
+    }
+
     this.selectedIngredients.push(ingredientId);
     this.updateSelectedText();
+    this.syncInteractionState();
   }
 
   private clearSelection(): void {
-    if ((this.phaseState !== "demo" && this.phaseState !== "live") || this.recipePhase !== "recall") {
+    if (this.phaseState !== "demo" && this.phaseState !== "live") {
+      return;
+    }
+
+    if (this.recipePhase !== "recall") {
+      this.showLockedIngredientFeedback();
       return;
     }
 
     this.selectedIngredients = [];
     this.updateSelectedText();
+    this.syncInteractionState();
   }
 
   private confirmRecipe(): void {
     if (
       !this.currentRecipe ||
       this.ended ||
-      this.recipePhase !== "recall" ||
       (this.phaseState !== "demo" && this.phaseState !== "live")
     ) {
+      return;
+    }
+
+    if (this.recipePhase !== "recall") {
+      this.showLockedIngredientFeedback();
       return;
     }
 
@@ -784,6 +908,8 @@ export class ApothecaryScene extends BaseScene {
         ? "The practice fragment is hidden now. Restore it from memory."
         : "The fragment is hidden now. Restore the remedy from memory.";
     this.updateRecipeCopy();
+    this.updateSelectedText();
+    this.updatePhasePresentation();
     this.syncInteractionState();
     this.game.updateGuidance({
       objectiveText:
@@ -800,6 +926,20 @@ export class ApothecaryScene extends BaseScene {
     this.refreshHud();
   }
 
+  private showLockedIngredientFeedback(): void {
+    if (this.recipePhase !== "memorize") {
+      return;
+    }
+
+    this.status = `Memorize first. Recall begins in ${Math.max(
+      1,
+      Math.ceil(this.memorizeTimeRemaining),
+    )}s, then the ingredients unlock.`;
+    this.updateSelectedText();
+    this.updatePhasePresentation();
+    this.refreshHud();
+  }
+
   private updateRecipeCopy(): void {
     if (!this.currentRecipe) {
       return;
@@ -813,33 +953,106 @@ export class ApothecaryScene extends BaseScene {
     this.recipeTitleText.text = `${practiceLabel}: ${this.currentRecipe.name}`;
     this.recipeDetailText.text =
       this.recipePhase === "memorize"
-        ? `${this.phaseState === "demo" ? "Practice first." : "Memorize this remedy first."}\n\nRemembered sequence: ${sequence}`
-        : `${this.phaseState === "demo" ? "Practice recall." : "Recall phase."}\n\nWhich ingredients did this remedy need? Restore them in order.`;
+        ? `${
+            this.phaseState === "demo"
+              ? "Memorize first. Do not tap the ingredients yet. Recall begins when the fragment fades."
+              : "Memorize first. Do not tap the ingredients until Recall begins."
+          }\n\nRemembered sequence: ${sequence}`
+        : `${
+            this.phaseState === "demo" ? "Practice recall." : "Recall phase."
+          }\n\nThe sequence is hidden now. Tap the ingredients in order, then press Restore Remedy.`;
+  }
+
+  private updatePhasePresentation(): void {
+    if (!this.currentLayout || !this.currentRecipe) {
+      this.phaseBadge.clear();
+      this.phaseBadgeText.text = "";
+      this.phaseHintText.visible = false;
+      return;
+    }
+
+    const badgeHeight = this.isCompactMobileLayout() ? 28 : 30;
+    const badgeLabel = this.recipePhase === "memorize" ? "MEMORIZE" : "RECALL";
+    const badgeColor = this.recipePhase === "memorize" ? 0xf5c542 : 0x7c5cbf;
+
+    this.phaseBadgeText.text = badgeLabel;
+    this.phaseBadgeText.style.fontSize = this.isCompactMobileLayout() ? 13 : 16;
+    this.phaseBadgeText.style.fill = this.recipePhase === "memorize" ? 0x2c1810 : 0xf5efe0;
+    this.phaseBadgeText.position.set(
+      this.currentLayout.phaseBadgeX + 14,
+      this.currentLayout.phaseBadgeY + 7,
+    );
+
+    const badgeWidth = this.phaseBadgeText.width + 28;
+    this.phaseBadge.clear();
+    this.phaseBadge
+      .roundRect(
+        this.currentLayout.phaseBadgeX,
+        this.currentLayout.phaseBadgeY,
+        badgeWidth,
+        badgeHeight,
+        badgeHeight / 2,
+      )
+      .fill({
+        color: badgeColor,
+        alpha: 0.94,
+      });
+    this.phaseBadge
+      .roundRect(
+        this.currentLayout.phaseBadgeX,
+        this.currentLayout.phaseBadgeY,
+        badgeWidth,
+        badgeHeight,
+        badgeHeight / 2,
+      )
+      .stroke({
+        color: 0xf5efe0,
+        width: 1.5,
+        alpha: 0.42,
+      });
+
+    const showPhaseHint = this.currentLayout.hintWidth > 0;
+    this.phaseHintText.visible = showPhaseHint;
+
+    if (!showPhaseHint) {
+      return;
+    }
+
+    this.phaseHintText.style.fill = this.recipePhase === "memorize" ? 0xf5c542 : 0xf5efe0;
+    this.phaseHintText.text =
+      this.recipePhase === "memorize"
+        ? `Memorize now. The cards stay sealed until Recall begins in ${Math.max(
+            1,
+            Math.ceil(this.memorizeTimeRemaining),
+          )}s.`
+        : "Recall now. Tap the ingredients in order, then press Restore Remedy.";
   }
 
   private syncInteractionState(): void {
-    const canInteract =
+    const sceneActive =
       Boolean(this.currentRecipe) &&
       !this.ended &&
-      this.recipePhase === "recall" &&
       (this.phaseState === "demo" || this.phaseState === "live");
+    const canInteract = sceneActive && this.recipePhase === "recall";
 
-    this.ingredientChoices.forEach(({ node }) => {
-      node.eventMode = canInteract ? "static" : "none";
-      node.cursor = canInteract ? "pointer" : "default";
-      node.alpha = canInteract ? 1 : 0.58;
+    this.ingredientChoices.forEach(({ definition, node }) => {
+      const selected = this.selectedIngredients.includes(definition.id);
+      node.eventMode = sceneActive ? "static" : "none";
+      node.cursor = canInteract && !selected ? "pointer" : "default";
+      node.alpha = canInteract ? (selected ? 0.46 : 1) : 0.58;
+      node.scale.set(selected ? 0.98 : 1);
     });
 
     if (this.confirmButton) {
-      this.confirmButton.eventMode = canInteract ? "static" : "none";
+      this.confirmButton.eventMode = sceneActive ? "static" : "none";
       this.confirmButton.cursor = canInteract ? "pointer" : "default";
-      this.confirmButton.alpha = canInteract ? 0.95 : 0.5;
+      this.confirmButton.alpha = canInteract ? 0.95 : 0.52;
     }
 
     if (this.clearButton) {
-      this.clearButton.eventMode = canInteract ? "static" : "none";
+      this.clearButton.eventMode = sceneActive ? "static" : "none";
       this.clearButton.cursor = canInteract ? "pointer" : "default";
-      this.clearButton.alpha = canInteract ? 0.95 : 0.5;
+      this.clearButton.alpha = canInteract ? 0.95 : 0.52;
     }
   }
 
@@ -861,11 +1074,32 @@ export class ApothecaryScene extends BaseScene {
   }
 
   private updateSelectedText(): void {
-    this.selectedText.text = this.selectedIngredients.length
-      ? `Restoration Bowl: ${this.selectedIngredients
-          .map((ingredientId) => this.getIngredient(ingredientId).name)
-          .join("  ->  ")}`
-      : "Restoration Bowl: Empty";
+    if (this.recipePhase === "memorize") {
+      this.selectedText.text = `Restoration Bowl: Locked.\nRecall begins in ${Math.max(
+        1,
+        Math.ceil(this.memorizeTimeRemaining),
+      )}s.`;
+      return;
+    }
+
+    if (!this.selectedIngredients.length) {
+      this.selectedText.text = "Restoration Bowl: Empty.\nTap the remembered ingredients in order.";
+      return;
+    }
+
+    const ingredients = this.selectedIngredients
+      .map((ingredientId) => this.getIngredient(ingredientId).name)
+      .join("  ->  ");
+    const remaining = Math.max(
+      0,
+      (this.currentRecipe?.ingredients.length ?? 0) - this.selectedIngredients.length,
+    );
+    const nextStep =
+      remaining > 0
+        ? `\n${remaining} more ${remaining === 1 ? "ingredient" : "ingredients"} to place.`
+        : "\nPress Restore Remedy when the order feels right.";
+
+    this.selectedText.text = `Restoration Bowl: ${ingredients}${nextStep}`;
   }
 
   private drawTimerBar(): void {

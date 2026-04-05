@@ -67,7 +67,7 @@ export const HUB_COPY = [
   {
     subtitle: "The first lights are awake now, and a ribbon of spirit traces the next path through the shrine.",
     currentObjective: "Follow Simba to the Gift of Flow.",
-    simbaPrompt: "See? I knew you'd get that you smartie pants. Now the moon charms want their turn.",
+    simbaPrompt: "See? I knew you'd get that, smartie pants. Now the moon charms want their turn.",
     awakeningText: "The lantern court glows warmer, and the air begins moving in soft blue arcs.",
   },
   {
@@ -86,7 +86,7 @@ export const HUB_COPY = [
     subtitle: "Every gift is awake now, and the whole shrine is ready to tell Aanavee what it recognized all along.",
     currentObjective: "Approach the inner shrine and let Simba finish the story.",
     simbaPrompt: "There you are. Look what you woke up.",
-    awakeningText: "The whole shrine breathes with warm light, drifting foxfire, and a steady golden hum.",
+    awakeningText: "The whole shrine breathes with warm light, drifting petals, and a steady golden hum.",
   },
 ] as const;
 
@@ -98,13 +98,13 @@ export const HUB_AMBIENT_LINES: string[][] = [
   ],
   [
     "That first glow is still hanging in the air.",
-    "You're as pretty as these petals I made lol. Hope you like them, (but you're prettier).",
+    "You're as pretty as these petals I made. Hope you like them... though you're prettier.",
     "One little gift awake, and the whole shrine starts showing off.",
   ],
   [
     "The spirit of the shrine drifts through the trees like it wants a better view.",
     "The memory bench glints as if it just remembered Aanavee's name.",
-    "The shrine is getting clingy, in the sweetest possible way. (sorry if i get too clingy just lmk)",
+    "The shrine is getting clingy, in the sweetest possible way.",
   ],
   [
     "A low hum gathers near the inner chamber, like it is waiting for one more note.",
@@ -140,7 +140,7 @@ export const GIFT_REVEALS: Record<TrialId, GiftRevealCopy> = {
       },
       {
         speaker: "Simba",
-        text: "I really adore that about you. When things matter, you become so calm and dependable. I feel it, and it means a lot to me x",
+        text: "I really adore that about you. When things matter, you become so calm and dependable. I feel that, and it means a lot to me x",
         portrait: "simba",
       },
     ],
@@ -277,7 +277,17 @@ export const ENDING_DIALOGUE: DialogueLine[] = [
   },
   {
     speaker: "Simba",
-    text: "You were never just visiting this shrine, love. You were the reason it woke up. You woke me up :) (because those stupid alarms never work). You were my legendary champion bean girl all along.",
+    text: "You were never just visiting this shrine, love.",
+    portrait: "simba",
+  },
+  {
+    speaker: "Simba",
+    text: "You were the reason it woke up. You woke me up :) (because those stupid alarms never work)",
+    portrait: "simba",
+  },
+  {
+    speaker: "Simba",
+    text: "You were my legendary champion bean girl all along.",
     portrait: "simba",
   },
 ];

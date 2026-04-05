@@ -41,7 +41,7 @@ export class PixiButton extends Container {
     this.eventMode = "static";
     this.cursor = "pointer";
 
-    this.on("pointertap", options.onClick);
+    this.on("pointerdown", options.onClick);
     this.on("pointerover", () => {
       this.scale.set(1.03);
       this.alpha = 1;

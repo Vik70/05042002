@@ -62,23 +62,23 @@ export function ObjectiveBanner({
         }`}
         style={{ top: `${topOffsetPx}px` }}
       >
-        <div
-          className={`moonlit-frame w-full max-w-3xl rounded-[18px] border border-white/10 px-4 py-3 shadow-[0_14px_30px_rgba(0,0,0,0.28)] ${
-            visible ? "pointer-events-auto" : "pointer-events-none"
-          }`}
-        >
-          <p className="text-[10px] uppercase tracking-[0.28em] text-sakura/78">Current Objective</p>
-          <h2 className="mt-1 truncate text-sm font-semibold text-paper-cream md:text-base">
-            {guidance.objectiveTitle}
-          </h2>
-          {guidance.objectiveText ? (
-            <p className="mt-1 truncate text-xs text-paper-cream/72 md:text-sm">{guidance.objectiveText}</p>
-          ) : null}
-          {guidance.controlsHint ? (
-            <p className="mt-2 truncate text-[10px] uppercase tracking-[0.18em] text-paper-cream/50">
-              {guidance.controlsHint}
+        <div className="moonlit-frame w-full max-w-3xl rounded-[16px] border border-white/10 px-3 py-2 shadow-[0_12px_24px_rgba(0,0,0,0.24)]">
+          <div className="flex items-center gap-3">
+            <p className="shrink-0 rounded-full border border-sakura/24 bg-white/5 px-2 py-1 text-[9px] uppercase tracking-[0.18em] text-sakura/80">
+              Objective
             </p>
-          ) : null}
+            <div className="min-w-0 flex-1">
+              <h2 className="truncate text-sm font-semibold text-paper-cream">{guidance.objectiveTitle}</h2>
+              {guidance.objectiveText ? (
+                <p className="mt-0.5 truncate text-[11px] text-paper-cream/66">{guidance.objectiveText}</p>
+              ) : null}
+            </div>
+            {guidance.controlsHint ? (
+              <p className="hidden max-w-[34%] truncate text-[9px] uppercase tracking-[0.16em] text-paper-cream/46 md:block">
+                {guidance.controlsHint}
+              </p>
+            ) : null}
+          </div>
         </div>
       </div>
     );

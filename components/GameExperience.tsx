@@ -204,14 +204,22 @@ export function GameExperience() {
             ref={topChromeRef}
             className="pointer-events-none absolute inset-x-0 top-0 z-40 pl-safe pr-safe pt-safe"
           >
-            <div className="pointer-events-auto flex items-center justify-between gap-3 p-3 md:p-4">
+            <div
+              className={`pointer-events-auto flex items-center justify-between gap-3 ${
+                showCompactLandscapeLayout ? "p-2" : "p-3 md:p-4"
+              }`}
+            >
               <button
                 type="button"
                 onClick={() => {
                   manager?.destroy();
                   router.push("/");
                 }}
-                className="min-h-[44px] rounded-full border border-white/10 bg-black/35 px-3 py-1.5 text-xs text-paper-cream/80 backdrop-blur transition hover:bg-white/8 md:px-4 md:py-2 md:text-sm"
+                className={`rounded-full border border-white/10 bg-black/35 text-paper-cream/80 backdrop-blur transition hover:bg-white/8 ${
+                  showCompactLandscapeLayout
+                    ? "min-h-[36px] px-2.5 py-1 text-[11px]"
+                    : "min-h-[44px] px-3 py-1.5 text-xs md:px-4 md:py-2 md:text-sm"
+                }`}
               >
                 Return Home
               </button>
