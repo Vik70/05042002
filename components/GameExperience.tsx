@@ -305,7 +305,7 @@ export function GameExperience() {
                 onNextTrack={() => manager?.audio.nextTrack()}
                 onReturnHome={() => {
                   manager?.destroy();
-                  router.push("/");
+                  router.push("/memories/four-gifts");
                 }}
               />
             </div>

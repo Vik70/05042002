@@ -7,5 +7,7 @@ test-results
 playwright-report
 .cursor-tmp-home
 *.tsbuildinfo
+.env
+.env*.local
 .DS_Store
 *.log

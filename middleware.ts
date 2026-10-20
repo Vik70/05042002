@@ -1,57 +1,37 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { GATE_COOKIE, verifySessionToken } from "@/lib/auth/session";
 
-const BASIC_AUTH_USERNAME = process.env.BASIC_AUTH_USERNAME ?? "Zack Knight";
-const BASIC_AUTH_PASSWORD = process.env.BASIC_AUTH_PASSWORD ?? "piplup";
+const PUBLIC_PREFIXES = ["/gate", "/api/gate", "/favicon_io", "/favicon.ico", "/robots.txt"];
 
-const unauthorizedResponse = () =>
-  new NextResponse("Authentication required.", {
-    status: 401,
-    headers: {
-      "WWW-Authenticate": 'Basic realm="Aanavee Shrine", charset="UTF-8"',
-    },
-  });
-
-const decodeCredentials = (authorizationHeader: string): { username: string; password: string } | null => {
-  const [scheme, encoded] = authorizationHeader.split(" ");
-  if (scheme !== "Basic" || !encoded) {
-    return null;
-  }
-
+const isPublicPath = (pathname: string): boolean => {
+  let decoded = pathname;
   try {
-    const decoded = atob(encoded);
-    const separatorIndex = decoded.indexOf(":");
-    if (separatorIndex < 0) {
-      return null;
-    }
-
-    return {
-      username: decoded.slice(0, separatorIndex),
-      password: decoded.slice(separatorIndex + 1),
-    };
+    decoded = decodeURIComponent(pathname);
   } catch {
-    return null;
+    // Keep the raw path if it isn't valid percent-encoding.
   }
+  return PUBLIC_PREFIXES.some((prefix) => decoded === prefix || decoded.startsWith(`${prefix}/`) || decoded.startsWith(`${prefix} `));
 };
 
-export function middleware(request: NextRequest) {
-  const authorizationHeader = request.headers.get("authorization");
-  if (!authorizationHeader) {
-    return unauthorizedResponse();
+export async function middleware(request: NextRequest) {
+  const { pathname, search } = request.nextUrl;
+
+  if (isPublicPath(pathname)) {
+    return NextResponse.next();
   }
 
-  const credentials = decodeCredentials(authorizationHeader);
-  if (!credentials) {
-    return unauthorizedResponse();
+  if (await verifySessionToken(request.cookies.get(GATE_COOKIE)?.value, "gate")) {
+    return NextResponse.next();
   }
 
-  if (
-    credentials.username !== BASIC_AUTH_USERNAME ||
-    credentials.password !== BASIC_AUTH_PASSWORD
-  ) {
-    return unauthorizedResponse();
+  if (pathname.startsWith("/api/")) {
+    return NextResponse.json({ error: "The towel isn't on the rail yet." }, { status: 401 });
   }
 
-  return NextResponse.next();
+  const gateUrl = request.nextUrl.clone();
+  gateUrl.pathname = "/gate";
+  gateUrl.search = pathname === "/" ? "" : `?next=${encodeURIComponent(`${pathname}${search}`)}`;
+  return NextResponse.redirect(gateUrl);
 }
 
 export const config = {

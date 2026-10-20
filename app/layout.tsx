@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "@/app/globals.css";
-import { BackgroundWallpaper } from "@/components/BackgroundWallpaper";
+import { fontVariables } from "@/app/fonts";
 
 const faviconBasePath = encodeURI("/favicon_io (1)");
 const shareImagePath = `${faviconBasePath}/android-chrome-512x512.png`;
@@ -18,28 +18,29 @@ const normalizedSiteUrl =
 
 export const metadata: Metadata = {
   metadataBase: new URL(normalizedSiteUrl),
-  title: "Happy Birthday, Aanavee | Aanavee: The Four Gifts",
-  description:
-    "Happy birthday, Aanavee. A cute moonlit shrine journey where Simba reveals your gifts of precision, flow, insight, and voice.",
+  title: {
+    default: "Us, so far",
+    template: "%s · Us, so far",
+  },
+  description: "A little museum of our moments.",
+  robots: { index: false, follow: false },
   openGraph: {
-    title: "Happy Birthday, Aanavee",
-    description:
-      "A little moonlit birthday shrine from Simba, with four gifts waiting to wake just for you.",
+    title: "Us, so far",
+    description: "A little museum of our moments. The towel goes on the rail.",
     type: "website",
     images: [
       {
         url: shareImagePath,
         width: 512,
         height: 512,
-        alt: "Pixel art portrait of Aanavee for The Four Gifts",
+        alt: "Pixel art portrait of Aanavee",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Happy Birthday, Aanavee",
-    description:
-      "A little moonlit birthday shrine from Simba, with four gifts waiting to wake just for you.",
+    title: "Us, so far",
+    description: "A little museum of our moments. The towel goes on the rail.",
     images: [shareImagePath],
   },
   manifest: `${faviconBasePath}/site.webmanifest`,
@@ -68,9 +69,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" className={fontVariables}>
       <body>
-        <BackgroundWallpaper />
         <div className="relative z-0">{children}</div>
       </body>
     </html>
