@@ -170,6 +170,7 @@ export function TowelGate({ nextPath }: { nextPath: string }) {
     const cellCount = cellsPerRow * (cloth.rows - 1);
     const cellOrder = Array.from({ length: cellCount }, (_, index) => index);
     const cellDepth = new Float32Array(cellCount);
+    const cellInFront = new Uint8Array(cellCount);
     const cellBase = new Float32Array(cellCount * 3);
     const lastCellRow = cloth.rows - 2;
 
@@ -472,16 +473,21 @@ export function TowelGate({ nextPath }: { nextPath: string }) {
         ctx.stroke();
       };
 
+      // Cloth lying in the rail's own plane keeps whichever side it was last drawn on, so it can't flicker over and
+      // under the bars from one frame to the next.
+      for (let cell = 0; cell < cellCount; cell += 1) {
+        if (cellDepth[cell] > rail.z + 1) cellInFront[cell] = 1;
+        else if (cellDepth[cell] < rail.z - 3) cellInFront[cell] = 0;
+      }
       ctx.lineWidth = 0.9;
       ctx.lineJoin = "round";
-      let index = 0;
-      for (; index < cellCount && cellDepth[cellOrder[index]] < rail.z - 1; index += 1) {
-        drawCell(cellOrder[index]);
+      for (const cell of cellOrder) {
+        if (!cellInFront[cell]) drawCell(cell);
       }
       drawRail(currentView);
       ctx.lineWidth = 0.9;
-      for (; index < cellCount; index += 1) {
-        drawCell(cellOrder[index]);
+      for (const cell of cellOrder) {
+        if (cellInFront[cell]) drawCell(cell);
       }
 
       if (heat > 0.25 && Math.random() < heat * 0.5) {

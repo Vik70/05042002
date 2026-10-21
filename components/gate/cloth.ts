@@ -30,11 +30,41 @@ const DAMPING = 0.992;
 const ITERATIONS = 10;
 const THICKNESS = 4;
 export const RUNG_REACH = SCENE.rail.rungRadius + THICKNESS;
+const POST_REACH = SCENE.rail.postRadius + THICKNESS;
+const CONTACT_SLOP = 0.75;
 const WALL_Z = 3;
 const FRONT_Z = 260;
 const MAX_RELEASE_SPEED = 16;
+// The hand follows the pointer on a critically damped spring, so pointer events arriving once per frame (and the
+// snap onto a rung) don't jerk the held row. Its top speed stays under RUNG_REACH so nothing skips across a bar.
+const HAND_PULL = 0.12;
+const HAND_DRAG = 0.62;
+const MAX_HAND_SPEED = 9;
 const BEND_STIFFNESS = 0.3;
 const SEPARATION_BIAS = 0.022;
+const SPREAD_SLOPE = 0.65;
+const SPREAD_MAX = 24;
+const SPREAD_PULL = 0.08;
+const SPREAD_NEAR_ROWS = 3;
+const SLACK_ABOVE_HAND = 0.15;
+
+// The rail as capsules: each runs along x (rungs) or y (posts), sitting at `at` on the other axis.
+// Posts are only solid from the top rung down, so a towel laid over a rung's end rests on the joint
+// instead of being speared by the short stub of post above it.
+interface RailBar {
+  along: 0 | 1;
+  from: number;
+  to: number;
+  at: number;
+  reach: number;
+}
+
+const RAIL_BARS: RailBar[] = [
+  ...SCENE.rail.rungs.map((y): RailBar => ({ along: 0, from: SCENE.rail.left, to: SCENE.rail.right, at: y, reach: RUNG_REACH })),
+  ...[SCENE.rail.left, SCENE.rail.right].map(
+    (x): RailBar => ({ along: 1, from: SCENE.rail.rungs[0], to: SCENE.rail.bottom, at: x, reach: POST_REACH }),
+  ),
+];
 
 export const projectScale = (z: number): number => SCENE.focal / (SCENE.focal - z);
 
@@ -83,6 +113,7 @@ export class Cloth {
   readonly prev = new Float32Array(this.count * 3);
   readonly target = new Float32Array(this.count * 3);
   readonly pinned = new Uint8Array(this.count);
+  private readonly handVelocity = new Float32Array(this.count * 3);
 
   hooked = true;
   grabRow = -1;
@@ -153,6 +184,7 @@ export class Cloth {
     }
 
     this.pinned.fill(0);
+    this.handVelocity.fill(0);
     this.hooked = true;
     this.grabRow = -1;
     this.grabCol = -1;
@@ -194,14 +226,15 @@ export class Cloth {
     this.grabRow = Math.floor(particle / this.cols);
     this.grabCol = particle % this.cols;
     this.separationRow = this.grabRow;
-    this.separationTimer = Number.POSITIVE_INFINITY;
+    this.separationTimer = 0;
 
     for (let c = 0; c < this.cols; c += 1) {
       const i = this.index(c, this.grabRow);
       this.pinned[i] = 1;
-      this.target[i * 3] = this.pos[i * 3];
-      this.target[i * 3 + 1] = this.pos[i * 3 + 1];
-      this.target[i * 3 + 2] = this.pos[i * 3 + 2];
+      for (let axis = 0; axis < 3; axis += 1) {
+        this.target[i * 3 + axis] = this.pos[i * 3 + axis];
+        this.handVelocity[i * 3 + axis] = this.pos[i * 3 + axis] - this.prev[i * 3 + axis];
+      }
     }
   }
 
@@ -246,10 +279,14 @@ export class Cloth {
     const q = this.prev;
     let motion = 0;
 
-    if (this.separationTimer > 0 && Number.isFinite(this.separationTimer)) {
+    if (this.separationTimer > 0) {
       this.separationTimer -= 1;
     }
     const separating = this.separationTimer > 0 && this.separationRow >= 0;
+    const holding = this.isGrabbed;
+    const hand = holding ? this.index(this.grabCol, this.grabRow) * 3 : 0;
+    const handY = p[hand + 1];
+    const handZ = p[hand + 2];
 
     for (let i = 0; i < this.count; i += 1) {
       const o = i * 3;
@@ -257,9 +294,20 @@ export class Cloth {
         q[o] = p[o];
         q[o + 1] = p[o + 1];
         q[o + 2] = p[o + 2];
-        p[o] += (this.target[o] - p[o]) * 0.5;
-        p[o + 1] += (this.target[o + 1] - p[o + 1]) * 0.5;
-        p[o + 2] += (this.target[o + 2] - p[o + 2]) * 0.5;
+        const v = this.handVelocity;
+        for (let axis = 0; axis < 3; axis += 1) {
+          v[o + axis] += (this.target[o + axis] - p[o + axis]) * HAND_PULL - v[o + axis] * HAND_DRAG;
+        }
+        const speed = Math.hypot(v[o], v[o + 1], v[o + 2]);
+        if (speed > MAX_HAND_SPEED) {
+          const k = MAX_HAND_SPEED / speed;
+          v[o] *= k;
+          v[o + 1] *= k;
+          v[o + 2] *= k;
+        }
+        p[o] += v[o];
+        p[o + 1] += v[o + 1];
+        p[o + 2] += v[o + 2];
         continue;
       }
 
@@ -280,6 +328,21 @@ export class Cloth {
       p[o + 1] += vy + GRAVITY;
       p[o + 2] += vz + bias;
       motion += Math.abs(vx) + Math.abs(vy) + Math.abs(vz);
+
+      // Held by one row, the towel hangs as a narrow V: the rows either side of the hand keep to their own side
+      // of it, so a swing can't fold one half through the other and weave it through the rail. Further rows are
+      // only steered once they hang below the hand, so a half flung up the wall isn't propped up there.
+      if (holding) {
+        const rows = Math.floor(i / this.cols) - this.grabRow;
+        if (rows !== 0 && (Math.abs(rows) <= SPREAD_NEAR_ROWS || p[o + 1] > handY)) {
+          const side = rows > 0 ? 1 : -1;
+          const want = Math.min(SPREAD_MAX, Math.abs(rows) * this.spacing * SPREAD_SLOPE);
+          const offset = (p[o + 2] - handZ) * side;
+          if (offset < want) {
+            p[o + 2] += (want - offset) * side * SPREAD_PULL;
+          }
+        }
+      }
     }
 
     this.speed = motion / this.count;
@@ -293,6 +356,8 @@ export class Cloth {
   private solveConstraints(): void {
     const p = this.pos;
     const total = this.constraintA.length;
+    // Nothing holds up the cloth above the hand, so there it gives way when squeezed instead of standing up like card.
+    const handY = this.isGrabbed ? p[this.index(this.grabCol, this.grabRow) * 3 + 1] + 1 : Number.NEGATIVE_INFINITY;
     for (let k = 0; k < total; k += 1) {
       const ia = this.constraintA[k];
       const ib = this.constraintB[k];
@@ -316,7 +381,10 @@ export class Cloth {
       if (this.stiffness[k] < 0.5 && distance > restLength) {
         continue;
       }
-      const correction = ((distance - restLength) / distance) * this.stiffness[k];
+      let correction = ((distance - restLength) / distance) * this.stiffness[k];
+      if (distance < restLength && p[a + 1] < handY && p[b + 1] < handY) {
+        correction *= SLACK_ABOVE_HAND;
+      }
       const ca = (correction * wa) / weight;
       const cb = (correction * wb) / weight;
       p[a] += dx * ca;
@@ -331,8 +399,7 @@ export class Cloth {
   private collide(withFriction: boolean): void {
     const p = this.pos;
     const q = this.prev;
-    const { rail, floorY } = SCENE;
-    const reach2 = RUNG_REACH * RUNG_REACH;
+    const { floorY } = SCENE;
 
     for (let i = 0; i < this.count; i += 1) {
       if (this.pinned[i]) {
@@ -351,28 +418,8 @@ export class Cloth {
         p[o + 2] = FRONT_Z;
       }
 
-      if (p[o] > rail.left - 4 && p[o] < rail.right + 4) {
-        for (let r = 0; r < rail.rungs.length; r += 1) {
-          let dy = p[o + 1] - rail.rungs[r];
-          let dz = p[o + 2] - rail.z;
-          const d2 = dy * dy + dz * dz;
-          if (d2 >= reach2) {
-            continue;
-          }
-          let d = Math.sqrt(d2);
-          if (d < 1e-4) {
-            dy = -1;
-            dz = 0;
-            d = 1;
-          }
-          p[o + 1] = rail.rungs[r] + (dy / d) * RUNG_REACH;
-          p[o + 2] = rail.z + (dz / d) * RUNG_REACH;
-          if (withFriction) {
-            q[o] += (p[o] - q[o]) * 0.55;
-            q[o + 1] += (p[o + 1] - q[o + 1]) * 0.45;
-            q[o + 2] += (p[o + 2] - q[o + 2]) * 0.45;
-          }
-        }
+      for (const bar of RAIL_BARS) {
+        this.collideBar(o, bar, withFriction);
       }
 
       if (p[o + 1] > floorY - 2) {
@@ -387,6 +434,70 @@ export class Cloth {
       if (p[o] > 1300) p[o] = 1300;
       if (p[o + 1] < -500) p[o + 1] = -500;
     }
+  }
+
+  // Pushes a particle out the side of the bar it came from, so a fast tug can't pop it through to the far side.
+  private collideBar(o: number, bar: RailBar, withFriction: boolean): void {
+    const p = this.pos;
+    const q = this.prev;
+    const { along, reach } = bar;
+    const across = 1 - along;
+    const railZ = SCENE.rail.z;
+    const limit = reach + (withFriction ? CONTACT_SLOP : 0);
+
+    let db = p[o + across] - bar.at;
+    let dz = p[o + 2] - railZ;
+    if (db > limit || db < -limit || dz > limit || dz < -limit) {
+      return;
+    }
+    const spine = Math.min(bar.to, Math.max(bar.from, p[o + along]));
+    let da = p[o + along] - spine;
+    let d = Math.sqrt(da * da + db * db + dz * dz);
+    if (d >= limit) {
+      return;
+    }
+
+    const inside = d < reach;
+    if (inside) {
+      const qa = q[o + along] - Math.min(bar.to, Math.max(bar.from, q[o + along]));
+      const qb = q[o + across] - bar.at;
+      const qz = q[o + 2] - railZ;
+      if (d < 1e-4 || da * qa + db * qb + dz * qz < 0) {
+        const qd = Math.sqrt(qa * qa + qb * qb + qz * qz);
+        if (qd > 1e-4) {
+          da = qa;
+          db = qb;
+          dz = qz;
+          d = qd;
+        } else {
+          da = 0;
+          db = along === 0 ? -1 : 0;
+          dz = along === 0 ? 0 : 1;
+          d = 1;
+        }
+      }
+    }
+    const na = da / d;
+    const nb = db / d;
+    const nz = dz / d;
+    if (inside) {
+      p[o + along] = spine + na * reach;
+      p[o + across] = bar.at + nb * reach;
+      p[o + 2] = railZ + nz * reach;
+    }
+    if (!withFriction) {
+      return;
+    }
+
+    // Contact friction: slide less along the bar than around it, never sink in, and only half-bounce off.
+    const va = p[o + along] - q[o + along];
+    const vb = p[o + across] - q[o + across];
+    const vz = p[o + 2] - q[o + 2];
+    const vn = va * na + vb * nb + vz * nz;
+    const keepNormal = vn > 0 ? vn * 0.5 : 0;
+    q[o + along] = p[o + along] - ((va - vn * na) * 0.45 + keepNormal * na);
+    q[o + across] = p[o + across] - ((vb - vn * nb) * 0.55 + keepNormal * nb);
+    q[o + 2] = p[o + 2] - ((vz - vn * nz) * 0.55 + keepNormal * nz);
   }
 
   centre(): { x: number; y: number; z: number } {
