@@ -51,4 +51,10 @@ export type Step =
     }
   | { kind: "deck"; id: string; title: string; prompt: string; cards: string[]; minimum: number }
   | { kind: "wish"; id: string; title: string; prompt: string; options: string[]; max: number }
-  | { kind: "finale"; id: "finale"; title: string; prompt: string };
+  | { kind: "finale"; id: "finale"; title: string; prompt: string }
+  | { kind: "portrait"; id: "portrait"; title: string; prompt: string };
+
+export interface Portrait {
+  round: number;
+  image: string;
+}

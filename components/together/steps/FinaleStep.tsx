@@ -1,17 +1,15 @@
 "use client";
 
-import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Confetti } from "@/components/together/Confetti";
 import { HoldFlame } from "@/components/together/HoldFlame";
 import { Keepsake } from "@/components/together/Keepsake";
-import { StepIntro, type StepContext } from "@/components/together/parts";
+import { NextButton, StepIntro, type StepContext } from "@/components/together/parts";
 import { summarise } from "@/lib/together/logic";
 import type { Step } from "@/lib/together/types";
 
 export function FinaleStep({ ctx, step }: { ctx: StepContext; step: Extract<Step, { kind: "finale" }> }) {
   const wished = ctx.me.answers[step.id] === true || ctx.partner.answers[step.id] === true;
-  const [confirmRestart, setConfirmRestart] = useState(false);
   const summary = useMemo(
     () => summarise({ [ctx.seat]: ctx.me, [ctx.partnerSeat]: ctx.partner } as Parameters<typeof summarise>[0]),
     [ctx.seat, ctx.partnerSeat, ctx.me, ctx.partner],
@@ -41,33 +39,9 @@ export function FinaleStep({ ctx, step }: { ctx: StepContext; step: Extract<Step
 
       <Keepsake summary={summary} />
 
-      <div className="flex flex-col items-center gap-4 pb-4">
-        <Link
-          href="/memories/seven-months"
-          className="w-full rounded-full border border-[#ffcf8a]/50 px-6 py-4 text-center font-display text-xl italic text-[#ffcf8a] transition active:scale-[0.98]"
-        >
-          Our seven months page
-        </Link>
-        {confirmRestart ? (
-          <p className="text-center font-sans text-sm text-[#fff1e6]/70">
-            Start a fresh game on both phones?{" "}
-            <button type="button" onClick={ctx.restart} className="text-[#ffcf8a] underline underline-offset-4">
-              yes, again
-            </button>{" "}
-            ·{" "}
-            <button type="button" onClick={() => setConfirmRestart(false)} className="underline underline-offset-4">
-              keep this one
-            </button>
-          </p>
-        ) : (
-          <button
-            type="button"
-            onClick={() => setConfirmRestart(true)}
-            className="font-sans text-xs uppercase tracking-[0.3em] text-[#fff1e6]/45 underline underline-offset-4"
-          >
-            play again
-          </button>
-        )}
+      <div className="pb-4">
+        <p className="mb-4 text-center font-hand text-2xl text-[#fff1e6]/75">Get the paints out. One last thing…</p>
+        <NextButton ctx={ctx} label="Blind portraits" />
       </div>
     </div>
   );

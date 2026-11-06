@@ -9,7 +9,7 @@ import { asText, formatMemoryDate, formatShortDate } from "@/lib/memories/format
 import { monthWindows } from "@/lib/memories/months";
 import { loadSiteContent } from "@/lib/memories/store";
 import { summarise } from "@/lib/together/logic";
-import { loadSeats } from "@/lib/together/store";
+import { loadPortraits, loadSeats } from "@/lib/together/store";
 
 async function MonthTimeline({ collection }: { collection: CollectionEntry[] }) {
   const { home } = await loadSiteContent();
@@ -54,6 +54,36 @@ async function DinnerKeepsake({ date }: { date: string }) {
     return (
       <section className="relative z-10 px-5 pt-20">
         <Keepsake summary={summary} dateLabel={formatShortDate(date)} />
+      </section>
+    );
+  } catch {
+    return null;
+  }
+}
+
+async function BlindPortraits() {
+  try {
+    const [{ seats }, portraits] = await Promise.all([loadSeats(), loadPortraits()]);
+    const round = Math.max(seats.vik?.round ?? 0, seats.aanavee?.round ?? 0);
+    const { vik, aanavee } = portraits;
+    if (!vik || !aanavee || vik.round !== round || aanavee.round !== round) return null;
+    return (
+      <section className="relative z-10 px-5 pt-20">
+        <h2 className="text-center font-hand text-4xl text-[#ffcf8a]">blind portraits</h2>
+        <div className="mx-auto mt-10 grid max-w-3xl gap-10 sm:grid-cols-2">
+          {[
+            { image: aanavee.image, label: "Vik, as painted by Aanavee", frame: "rotate-1 bg-[linear-gradient(135deg,#ffd6de,#f3a9b9)]" },
+            { image: vik.image, label: "Aanavee, as painted by Vik", frame: "-rotate-1 bg-[linear-gradient(135deg,#ffe7bf,#e8bb78)]" },
+          ].map(({ image, label, frame }) => (
+            <figure key={label}>
+              <div className={`rounded-[6px] p-3 shadow-[0_24px_50px_rgba(0,0,0,0.45)] ${frame}`}>
+                {/* eslint-disable-next-line @next/next/no-img-element -- stored data URLs, not optimisable assets */}
+                <img src={image} alt={label} className="block w-full rounded-[2px] bg-white object-contain" />
+              </div>
+              <figcaption className="mt-3 text-center font-hand text-2xl text-[#fff1e6]/85">{label}</figcaption>
+            </figure>
+          ))}
+        </div>
       </section>
     );
   } catch {
@@ -116,6 +146,7 @@ export function SevenMonthsMemory({ memory, photos, previous, next, collection }
       </section>
 
       <DinnerKeepsake date={memory.startDate} />
+      <BlindPortraits />
 
       <section className="relative z-10 px-5 py-20">
         <SealedLetter letter={letter} signoff={signoff} seal="7" />

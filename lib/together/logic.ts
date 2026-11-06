@@ -1,5 +1,5 @@
-import { FINALE_INDEX, PLAYER_NAMES, STEPS } from "@/lib/together/content";
-import { SEATS, type AnswerValue, type PlayerDoc, type Reaction, type Seat } from "@/lib/together/types";
+import { FIRST_ROUND, LAST_INDEX, PLAYER_NAMES, STEPS } from "@/lib/together/content";
+import { SEATS, type AnswerValue, type PlayerDoc, type Portrait, type Reaction, type Seat } from "@/lib/together/types";
 
 const MAX_TEXT = 600;
 const MAX_ITEMS = 16;
@@ -8,7 +8,7 @@ const MAX_REACTIONS = 8;
 
 export const isSeat = (value: unknown): value is Seat => SEATS.includes(value as Seat);
 
-export const freshDoc = (round = 0): PlayerDoc => ({
+export const freshDoc = (round = FIRST_ROUND): PlayerDoc => ({
   round,
   at: 0,
   deck: 0,
@@ -47,6 +47,7 @@ const readInt = (value: unknown, max: number): number =>
 export const sanitizeDoc = (raw: unknown): PlayerDoc | null => {
   if (typeof raw !== "object" || raw === null) return null;
   const input = raw as Record<string, unknown>;
+  if (readInt(input.round, 10_000) < FIRST_ROUND) return null;
   const stepIds = new Set(STEPS.map((step) => step.id));
 
   const answers: Record<string, AnswerValue> = {};
@@ -66,13 +67,24 @@ export const sanitizeDoc = (raw: unknown): PlayerDoc | null => {
 
   return {
     round: readInt(input.round, 10_000),
-    at: readInt(input.at, FINALE_INDEX),
+    at: readInt(input.at, LAST_INDEX),
     deck: readInt(input.deck, 1_000),
     holding: input.holding === true,
     answers,
     reactions,
     seen: readInt(input.seen, Number.MAX_SAFE_INTEGER),
   };
+};
+
+export const MAX_PORTRAIT_CHARS = 450_000;
+const PORTRAIT_PATTERN = /^data:image\/(?:jpeg|png|webp);base64,[A-Za-z0-9+/]+=*$/;
+
+export const sanitizePortrait = (raw: unknown): Portrait | null => {
+  if (typeof raw !== "object" || raw === null) return null;
+  const { round, image } = raw as Record<string, unknown>;
+  if (typeof image !== "string" || image.length > MAX_PORTRAIT_CHARS || !PORTRAIT_PATTERN.test(image)) return null;
+  const cleanRound = readInt(round, 10_000);
+  return cleanRound < FIRST_ROUND ? null : { round: cleanRound, image };
 };
 
 export const ONLINE_WINDOW_MS = 12_000;
@@ -124,7 +136,7 @@ export interface DinnerSummary {
 }
 
 export const summarise = (docs: Record<Seat, PlayerDoc | null>): DinnerSummary => {
-  const round = Math.max(docs.vik?.round ?? 0, docs.aanavee?.round ?? 0);
+  const round = Math.max(docs.vik?.round ?? FIRST_ROUND, docs.aanavee?.round ?? FIRST_ROUND);
   const vik = inRound(docs.vik, round);
   const aanavee = inRound(docs.aanavee, round);
   const players: Record<Seat, PlayerDoc> = { vik, aanavee };

@@ -11,6 +11,7 @@ import { GuessStep } from "@/components/together/steps/GuessStep";
 import { HoldStep } from "@/components/together/steps/HoldStep";
 import { LobbyStep } from "@/components/together/steps/LobbyStep";
 import { PickStep } from "@/components/together/steps/PickStep";
+import { PortraitStep } from "@/components/together/steps/PortraitStep";
 import { WishStep } from "@/components/together/steps/WishStep";
 import { WriteStep } from "@/components/together/steps/WriteStep";
 import { useTogether } from "@/components/together/useTogether";
@@ -229,6 +230,8 @@ function Table({ seat, onSwitch }: { seat: Seat; onSwitch: () => void }) {
         return <WishStep ctx={ctx} step={step} index={sparkIndex} />;
       case "finale":
         return <FinaleStep ctx={ctx} step={step} />;
+      case "portrait":
+        return <PortraitStep ctx={ctx} step={step} />;
     }
   };
 
@@ -275,7 +278,7 @@ function Table({ seat, onSwitch }: { seat: Seat; onSwitch: () => void }) {
             ) : null}
           </div>
         </div>
-        {step.kind !== "lobby" ? <CandleRow lit={lit} size="sm" showNext={step.kind !== "finale"} className="mt-3" /> : null}
+        {step.kind !== "lobby" ? <CandleRow lit={lit} size="sm" showNext={step.kind !== "finale" && step.kind !== "portrait"} className="mt-3" /> : null}
       </div>
 
       {error ? (

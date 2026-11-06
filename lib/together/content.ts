@@ -142,7 +142,17 @@ export const STEPS: Step[] = [
     title: "Make a wish",
     prompt: "Seven months, seven sparks. Hold the flame together and make a wish. The same one, ideally.",
   },
+  {
+    kind: "portrait",
+    id: "portrait",
+    title: "Blind portraits",
+    prompt:
+      "Paint each other without looking down at the paper. No peeking, no do-overs. When you're done, snap a photo of your masterpiece. Nobody sees either one until you've both hung yours up.",
+  },
 ];
 
-export const SPARK_COUNT = STEPS.filter((step) => step.kind !== "lobby" && step.kind !== "finale").length;
-export const FINALE_INDEX = STEPS.length - 1;
+export const SPARK_COUNT = STEPS.filter((step) => step.kind !== "lobby" && step.kind !== "finale" && step.kind !== "portrait").length;
+export const LAST_INDEX = STEPS.length - 1;
+
+/** Bump this to send both phones and the saved game back to the lobby; older rounds are treated as never played. */
+export const FIRST_ROUND = 100;

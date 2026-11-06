@@ -8,7 +8,7 @@ import { SmoothRoad } from "@/components/together/SmoothRoad";
 import type { MonthWindow } from "@/lib/memories/months";
 import { sfx } from "@/lib/sfx";
 
-export const WELCOME_COOKIE = "seven_months_seen";
+export const WELCOME_COOKIE = "seven_months_welcomed";
 
 type Scene = "open" | "seven" | "road" | "candles" | "smile";
 
