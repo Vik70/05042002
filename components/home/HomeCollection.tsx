@@ -1,3 +1,4 @@
+import type { Route } from "next";
 import Link from "next/link";
 import { LockDoorButton } from "@/components/home/LockDoorButton";
 import { memoryHref } from "@/components/memories/shared";
@@ -85,6 +86,20 @@ function CardMotif({ template, accent }: { template: TemplateId; accent: string 
           </text>
         </svg>
       );
+    case "seven-months":
+      return (
+        <svg viewBox="0 0 120 120" className="h-full w-full" aria-hidden="true">
+          <text x="58" y="96" textAnchor="middle" fontSize="100" fill={accent} opacity="0.9" style={{ fontFamily: "var(--font-fraunces), serif", fontStyle: "italic", fontWeight: 600 }}>
+            7
+          </text>
+          {[16, 30, 44, 58, 72, 86, 100].map((x, index) => (
+            <g key={x} transform={`translate(${x} ${108 - (index % 2) * 3})`}>
+              <rect x="-2" y="0" width="4" height="10" rx="1" fill="#fff1e6" opacity="0.85" />
+              <ellipse cx="0" cy="-3" rx="2" ry="3.4" fill={accent} />
+            </g>
+          ))}
+        </svg>
+      );
     default:
       return (
         <svg viewBox="0 0 120 120" className="h-full w-full" aria-hidden="true">
@@ -127,7 +142,7 @@ function MemoryCard({ memory, index }: { memory: MemoryRecord; index: number }) 
   );
 }
 
-export function HomeCollection({ home, memories }: { home: HomeSettings; memories: MemoryRecord[] }) {
+export function HomeCollection({ home, memories, replayKey }: { home: HomeSettings; memories: MemoryRecord[]; replayKey: string }) {
   const visible = memories.filter((memory) => !memory.hidden);
   const days = daysSince(home.togetherSince);
 
@@ -146,6 +161,14 @@ export function HomeCollection({ home, memories }: { home: HomeSettings; memorie
             <span className="font-sans text-xs uppercase tracking-[0.3em] text-[#4a3428]/70">days of us</span>
           </div>
         ) : null}
+        <div className="mt-6 flex flex-wrap items-center justify-center gap-3 font-sans text-xs uppercase tracking-[0.25em]">
+          <Link href="/together" className="rounded-full bg-[#4a1a34] px-5 py-2.5 text-[#ffcf8a] shadow-[0_10px_24px_rgba(74,26,52,0.25)] transition hover:-translate-y-0.5">
+            ✦ play seven sparks
+          </Link>
+          <Link href={`/?intro=${replayKey}` as Route} className="rounded-full border border-[#4a3428]/20 px-5 py-2.5 text-[#4a3428]/70 transition hover:border-[#4a3428]/50">
+            replay seven months
+          </Link>
+        </div>
       </header>
 
       <section className="relative mx-auto max-w-5xl px-5 pb-24">

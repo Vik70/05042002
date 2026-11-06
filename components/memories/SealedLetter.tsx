@@ -4,7 +4,7 @@ import { useState } from "react";
 import { toParagraphs } from "@/lib/memories/format";
 import { sfx } from "@/lib/sfx";
 
-export function SealedLetter({ letter, signoff }: { letter: string; signoff: string }) {
+export function SealedLetter({ letter, signoff, seal = "6" }: { letter: string; signoff: string; seal?: string }) {
   const [open, setOpen] = useState(false);
 
   if (!open) {
@@ -24,7 +24,7 @@ export function SealedLetter({ letter, signoff }: { letter: string; signoff: str
           <path d="M0 200 L120 96 M300 200 L180 96" stroke="#c9a77f" strokeWidth="1" />
         </svg>
         <span className="absolute left-1/2 top-[56%] grid h-20 w-20 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-[radial-gradient(circle_at_35%_30%,#c2454f,#7a1d2a)] shadow-[0_6px_14px_rgba(0,0,0,0.35),inset_0_-4px_8px_rgba(0,0,0,0.25)] transition group-hover:scale-105">
-          <span className="font-display text-3xl font-semibold italic text-[#f6c6a0]/90">6</span>
+          <span className="font-display text-3xl font-semibold italic text-[#f6c6a0]/90">{seal}</span>
         </span>
         <span className="absolute bottom-4 left-0 right-0 text-center font-hand text-2xl text-[#6b2a33]/80">for you, tap to open</span>
       </button>

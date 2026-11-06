@@ -155,6 +155,20 @@ export const TEMPLATES: Record<TemplateId, TemplateMeta> = {
       { key: "finale", label: "Message when every pair is matched", kind: "text" },
     ],
   },
+  "seven-months": {
+    label: "Seven months",
+    gameName: "Seven Sparks, live",
+    card: {
+      background:
+        "radial-gradient(circle at 70% 18%, rgba(255,180,107,0.4), transparent 38%), linear-gradient(180deg, #2a0f22 0%, #4a1a34 60%, #7a2a4a 100%)",
+      ink: "#fff1e6",
+      accent: "#ffcf8a",
+    },
+    extraFields: [
+      { key: "letter", label: "The letter", kind: "textarea" },
+      { key: "signoff", label: "Sign-off", kind: "text" },
+    ],
+  },
   keepsake: {
     label: "Keepsake",
     gameName: "Scratch to reveal",

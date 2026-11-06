@@ -5,6 +5,7 @@ export const TEMPLATE_IDS = [
   "golden-hour",
   "spain",
   "six-months",
+  "seven-months",
   "keepsake",
 ] as const;
 

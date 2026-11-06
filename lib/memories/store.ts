@@ -140,6 +140,15 @@ const putContent = (key: string, data: unknown) =>
 const deleteContent = (key: string) =>
   withClaim(() => rpc<null>("aanavee_delete", { p_key: key }));
 
+export const listContentByPrefix = async (prefix: string): Promise<Map<string, unknown>> => {
+  const content = await listContent();
+  return new Map([...content].filter(([key]) => key.startsWith(prefix)));
+};
+
+export const putRawContent = async (key: string, data: unknown): Promise<void> => {
+  await putContent(key, data);
+};
+
 const readString = (value: unknown, fallback: string, limit: number): string =>
   typeof value === "string" ? value.replace(/\r\n/g, "\n").trim().slice(0, limit) : fallback;
 

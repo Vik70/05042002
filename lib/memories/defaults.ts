@@ -133,6 +133,26 @@ export const BUILT_IN_MEMORIES: MemoryData[] = [
       finale: "Six months. Every memory, matched.",
     },
   },
+  {
+    slug: "seven-months",
+    template: "seven-months",
+    title: "Seven Months",
+    subtitle: "Bumpy start, smoother every month",
+    startDate: "2026-11-06",
+    endDate: "",
+    location: "Across the dinner table",
+    story:
+      "We did it backwards. Most people start smooth and find the bumps later; we got the bumps out of the way first.\n\nAnd every month since, the road has got a little smoother. Tonight isn't about how we started. It's about how good this feels now, and keeping it that way: smiling, staying soft with each other, and lighting a few more sparks.",
+    albumUrl: "",
+    song: "",
+    hidden: false,
+    palette: "plum",
+    extras: {
+      letter:
+        "Dear Aanavee,\n\nSeven months. We didn't take the easy road into this, and I wouldn't swap it, because look where it brought us.\n\nThank you for every time you chose patience, every time you made me laugh when I needed it, and for all the little moments that have made this feel easier and easier.\n\nHere's to keeping it soft, keeping it fun, and never letting the spark go out.",
+      signoff: "Always yours",
+    },
+  },
 ];
 
 export const BUILT_IN_SLUGS = new Set(BUILT_IN_MEMORIES.map((memory) => memory.slug));
